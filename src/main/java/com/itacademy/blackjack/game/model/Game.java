@@ -3,14 +3,16 @@ package com.itacademy.blackjack.game.model;
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.Deck;
 import com.itacademy.blackjack.deck.model.ScoringService;
+import com.itacademy.blackjack.game.model.exception.NotPlayerTurnException;
 import lombok.Getter;
 import lombok.Setter;
-import org.jspecify.annotations.Nullable;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 public class Game {
     @Getter
     private UUID id;
@@ -62,15 +64,46 @@ public class Game {
         this.gameStatus = GameStatus.STARTED;
 
         // Check for immediate Blackjack
-        if (getPlayerScore() == 21) {
-            determineWinner();
+        if (isBlackjack()) {
+            handleBlackjack();
         } else {
             this.gameStatus = GameStatus.PLAYER_TURN;
         }
     }
 
+    private boolean isBlackjack() {
+        return getPlayerScore() == 21 && playerHand.size() == 2;
+    }
+
+    private void handleBlackjack() {
+        if (getCrupierScore() == 21) {
+            gameResult = GameResult.PUSH;
+        } else {
+            gameResult = GameResult.BLACKJACK;
+        }
+        gameStatus = GameStatus.FINISHED;
+    }
+
+    public void crupierTurn() {
+        gameStatus = GameStatus.CRUPIER_TURN;
+
+        while (getCrupierScore() <= 16) {
+            crupierHit();
+        }
+
+        determineWinner();
+    }
+
     public void playerHit() {
+        if (gameStatus != GameStatus.PLAYER_TURN) {
+            throw new NotPlayerTurnException("It's not your turn!");
+        }
         playerHand.add(drawCardFromDeck());
+
+        if (getPlayerScore() > 21) {
+            gameResult = GameResult.CRUPIER_WINS;
+            gameStatus = GameStatus.FINISHED;
+        }
     }
 
     public void crupierHit() {
@@ -109,9 +142,23 @@ public class Game {
         } else {
             gameResult = GameResult.PUSH;
         }
-        System.out.println("Player: " + playerScore + ", Crupier: " + crupierScore);
+
+        log.info("Player: {}, Crupier: {}", playerScore, crupierScore);
+
         gameStatus = GameStatus.FINISHED;
 
     }
+
+    public void playerStand(){
+        if (gameStatus != GameStatus.PLAYER_TURN) {
+            throw new NotPlayerTurnException("It's not your turn!");
+        }
+        this.gameStatus = GameStatus.CRUPIER_TURN;
+        crupierTurn();
+    }
+
+
+
+
 
 }
