@@ -3,6 +3,7 @@ package com.itacademy.blackjack.game.model;
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.Deck;
 import com.itacademy.blackjack.deck.model.ScoringService;
+import com.itacademy.blackjack.game.domain.BlackjackPolicy;
 import com.itacademy.blackjack.game.model.exception.NotPlayerTurnException;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,15 +34,18 @@ public class Game {
     @Getter
     private GameResult gameResult;
 
-    private final ScoringService scoringService = new ScoringService();
+    private final ScoringService scoringService ;
+    private final BlackjackPolicy blackjackPolicy;
 
-    public Game() {
+    public Game(ScoringService scoringService, BlackjackPolicy blackjackPolicy) {
         this.id = UUID.randomUUID();
         this.gameStatus = GameStatus.CREATED;
         this.deck = new Deck();
         this.playerHand = new ArrayList<>();
         this.crupierHand = new ArrayList<>();
         this.gameResult = null;
+        this.scoringService = scoringService;
+        this.blackjackPolicy = blackjackPolicy;
     }
 
     public Card drawCardFromDeck() {
@@ -59,17 +63,22 @@ public class Game {
     }
 
     public void startGame() {
-        // Deal initial cards
         dealInitialCards();
         this.gameStatus = GameStatus.STARTED;
 
-        // Check for immediate Blackjack
-        if (isBlackjack()) {
-            handleBlackjack();
+        int playerScore = getPlayerScore();
+        int crupierScore = getCrupierScore();
+
+        if (blackjackPolicy.isBlackjack(playerHand, playerScore)) {
+            gameResult = blackjackPolicy.determineBlackjackResult(
+                    playerHand, playerScore, crupierHand, crupierScore
+            );
+            gameStatus = GameStatus.FINISHED;
         } else {
             this.gameStatus = GameStatus.PLAYER_TURN;
         }
     }
+
 
     private boolean isBlackjack() {
         return getPlayerScore() == 21 && playerHand.size() == 2;

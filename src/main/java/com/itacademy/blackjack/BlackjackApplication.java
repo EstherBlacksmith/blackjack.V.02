@@ -1,6 +1,8 @@
 package com.itacademy.blackjack;
 
 import com.itacademy.blackjack.deck.model.Deck;
+import com.itacademy.blackjack.deck.model.ScoringService;
+import com.itacademy.blackjack.game.domain.BlackjackPolicy;
 import com.itacademy.blackjack.game.model.Game;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,7 +17,10 @@ public class BlackjackApplication {
 	//	System.out.println(deck.getCardsSnapshot());
 		System.out.println(deck.draw());
 
-		Game game = new Game();
+		ScoringService scoringService = new ScoringService();
+		BlackjackPolicy blackjackPolicy = new BlackjackPolicy();
+
+		Game game = new Game(scoringService,blackjackPolicy);
 		game.dealInitialCards();
 		System.out.println(game.getPlayerHand());
 		System.out.println(game.getCrupierHand());
