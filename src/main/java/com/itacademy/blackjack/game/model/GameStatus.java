@@ -1,5 +1,5 @@
 package com.itacademy.blackjack.game.model;
 
 public enum GameStatus {
-    CREATED,STARTED,IN_PROGRESS,FINISHED
+    CREATED,STARTED,PLAYER_TURN,CRUPIER_TURN,FINISHED
 }
