@@ -5,12 +5,14 @@ import com.itacademy.blackjack.deck.model.Deck;
 import com.itacademy.blackjack.deck.model.ScoringService;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class Game {
+    @Getter
     private UUID id;
 
     @Setter
@@ -54,10 +56,20 @@ public class Game {
         crupierHand.add(drawCardFromDeck());
     }
 
-    public void playerHit() {
-        if (gameStatus != GameStatus.IN_PROGRESS) {
-            throw new IllegalStateException("Game is not in progress");
+    public void startGame() {
+        // Deal initial cards
+        dealInitialCards();
+        this.gameStatus = GameStatus.STARTED;
+
+        // Check for immediate Blackjack
+        if (getPlayerScore() == 21) {
+            determineWinner();
+        } else {
+            this.gameStatus = GameStatus.PLAYER_TURN;
         }
+    }
+
+    public void playerHit() {
         playerHand.add(drawCardFromDeck());
     }
 
@@ -72,4 +84,34 @@ public class Game {
     public int getCrupierScore() {
         return scoringService.calculateHandScore(crupierHand);
     }
+
+    public void determineWinner(){
+        int playerScore = getPlayerScore();
+        int crupierScore = getCrupierScore();
+
+
+      /*  Player Blackjack → Player wins 3:2 (unless crupier also has Blackjack = push)
+        Player Busts → Player loses (crupier wins)
+        Crupier Busts → Crupier loses (player wins)
+        Player Score > Crupier Score → Player wins
+        Crupier Score > Player Score → Crupier wins
+        Scores Equal → Push (tie, nobody wins)*/
+
+        // Check for busts FIRST!
+        if (playerScore > 21) {
+            gameResult = GameResult.CRUPIER_WINS;  // Player busted
+        } else if (crupierScore > 21) {
+            gameResult = GameResult.PLAYER_WINS;   // Crupier busted
+        } else if (playerScore > crupierScore) {
+            gameResult = GameResult.PLAYER_WINS;
+        } else if (crupierScore > playerScore) {
+            gameResult = GameResult.CRUPIER_WINS;
+        } else {
+            gameResult = GameResult.PUSH;
+        }
+        System.out.println("Player: " + playerScore + ", Crupier: " + crupierScore);
+        gameStatus = GameStatus.FINISHED;
+
+    }
+
 }
