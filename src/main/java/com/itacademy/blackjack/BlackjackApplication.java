@@ -21,7 +21,7 @@ public class BlackjackApplication {
 		System.out.println(game.getCrupierHand());
 		System.out.println(game.getCrupierScore());
 		System.out.println(game.getPlayerScore());
-
+		game.determineWinner();
 	}
 
 }
