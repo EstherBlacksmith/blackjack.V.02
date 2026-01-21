@@ -3,6 +3,7 @@ package com.itacademy.blackjack.game.model;
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.Deck;
 import com.itacademy.blackjack.deck.model.ScoringService;
+import com.itacademy.blackjack.game.domain.BlackjackPolicy;
 import com.itacademy.blackjack.game.model.exception.NotPlayerTurnException;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +12,20 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+/*
+* ✅ Completed:
 
+Create BlackjackPolicy domain service
+Create BlackjackPolicyTest
+Update Game.java to use BlackjackPolicy
+Update GameTest.java with BlackjackPolicy dependency
+🔲 Pending:
+5. Remove/fix blackjack tests in GameTest (testing private methods)
+6. Create GameRepository
+7. Create DTOs (GameResponse, CardResponse)
+8. Update GameController with REST endpoints
+9. Run all tests and fix failures
+* */
 @Slf4j
 public class Game {
     @Getter
@@ -33,15 +47,18 @@ public class Game {
     @Getter
     private GameResult gameResult;
 
-    private final ScoringService scoringService = new ScoringService();
+    private final ScoringService scoringService ;
+    private final BlackjackPolicy blackjackPolicy;
 
-    public Game() {
+    public Game(ScoringService scoringService, BlackjackPolicy blackjackPolicy) {
         this.id = UUID.randomUUID();
         this.gameStatus = GameStatus.CREATED;
         this.deck = new Deck();
         this.playerHand = new ArrayList<>();
         this.crupierHand = new ArrayList<>();
         this.gameResult = null;
+        this.scoringService = scoringService;
+        this.blackjackPolicy = blackjackPolicy;
     }
 
     public Card drawCardFromDeck() {
@@ -59,17 +76,22 @@ public class Game {
     }
 
     public void startGame() {
-        // Deal initial cards
         dealInitialCards();
         this.gameStatus = GameStatus.STARTED;
 
-        // Check for immediate Blackjack
-        if (isBlackjack()) {
-            handleBlackjack();
+        int playerScore = getPlayerScore();
+        int crupierScore = getCrupierScore();
+
+        if (blackjackPolicy.isBlackjack(playerHand, playerScore)) {
+            gameResult = blackjackPolicy.determineBlackjackResult(
+                    playerHand, playerScore, crupierHand, crupierScore
+            );
+            gameStatus = GameStatus.FINISHED;
         } else {
             this.gameStatus = GameStatus.PLAYER_TURN;
         }
     }
+
 
     private boolean isBlackjack() {
         return getPlayerScore() == 21 && playerHand.size() == 2;
