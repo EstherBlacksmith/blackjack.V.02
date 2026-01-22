@@ -68,4 +68,12 @@ public class GameService {
     private String capitalize(String s) {
         return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
+
+    public Mono<Game> getGameById(UUID id) {
+        return getGameById(id);
+    }
+
+    public Mono<Void> deleteById(UUID id) {
+        getGameById(id).;
+    }
 }
