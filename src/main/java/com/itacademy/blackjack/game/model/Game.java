@@ -9,23 +9,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.UUID;
-/*
-* ✅ Completed:
 
-Create BlackjackPolicy domain service
-Create BlackjackPolicyTest
-Update Game.java to use BlackjackPolicy
-Update GameTest.java with BlackjackPolicy dependency
-🔲 Pending:
-5. Remove/fix blackjack tests in GameTest (testing private methods)
-6. Create GameRepository
-7. Create DTOs (GameResponse, CardResponse)
-8. Update GameController with REST endpoints
-9. Run all tests and fix failures
-* */
 @Slf4j
 public class Game {
     @Getter
@@ -37,12 +24,10 @@ public class Game {
     @Setter
     @Getter
     private Deck deck;
-    @Setter
     @Getter
-    private List<Card> playerHand;
-    @Setter
+    private final Player player;
     @Getter
-    private List<Card> crupierHand;
+    private final Crupier crupier;
     @Setter
     @Getter
     private GameResult gameResult;
@@ -53,9 +38,9 @@ public class Game {
         this.id = UUID.randomUUID();
         this.gameStatus = GameStatus.CREATED;
         this.deck = new Deck();
-        this.playerHand = new ArrayList<>();
-        this.crupierHand = new ArrayList<>();
-        this.gameResult = null;
+        this.player = new Player("Player", scoringService);
+        this.crupier = new Crupier(scoringService);
+        this.gameResult = GameResult.NO_RESULTS_YET;
         this.scoringService = scoringService;
     }
 
@@ -64,53 +49,45 @@ public class Game {
     }
 
     public void dealInitialCards() {
-        // Deal 2 cards to player
-        playerHand.add(drawCardFromDeck());
-        playerHand.add(drawCardFromDeck());
-
-        // Deal 2 cards to crupier
-        crupierHand.add(drawCardFromDeck());
-        crupierHand.add(drawCardFromDeck());
+        //2 initial card for each player (player and crupier)
+        player.receiveCard(drawCardFromDeck());
+        crupier.receiveCard(drawCardFromDeck());
+        player.receiveCard(drawCardFromDeck());
+        crupier.receiveCard(drawCardFromDeck());
     }
 
     public void startGame() {
         dealInitialCards();
-        this.gameStatus = GameStatus.STARTED;
 
-        int playerScore = getPlayerScore();
-        int crupierScore = getCrupierScore();
-
-        if (isBlackjack(playerHand, playerScore)) {
-            gameResult = determineBlackjackResult(
-                    playerHand, playerScore, crupierHand, crupierScore
-            );
-            gameStatus = GameStatus.FINISHED;
+        // Check for immediate Blackjack
+        if (player.getStatus() == PlayerStatus.BLACKJACK) {
+            handleBlackjack();
         } else {
-            this.gameStatus = GameStatus.PLAYER_TURN;
+            gameStatus = GameStatus.PLAYER_TURN;
         }
     }
 
-
-    private boolean isBlackjack() {
-        return getPlayerScore() == 21 && playerHand.size() == 2;
-    }
-
     private void handleBlackjack() {
-        if (getCrupierScore() == 21) {
+        if (crupier.hasBlackjack()) {
             gameResult = GameResult.PUSH;
         } else {
             gameResult = GameResult.BLACKJACK;
         }
         gameStatus = GameStatus.FINISHED;
+        log.info("Player has Blackjack! Result: {}", gameResult);
     }
 
     public void crupierTurn() {
-        gameStatus = GameStatus.CRUPIER_TURN;
+        log.info("Crupier turn starting. Score: {}", crupier.getScore());
 
-        while (getCrupierScore() <= 16) {
-            crupierHit();
+        // Dealer must hit on 16 or less, stand on 17 or more
+        while (crupier.mustHit()) {
+            Card card = drawCardFromDeck();
+            crupier.receiveCard(card);
+            log.debug("Crupier drew: {}. New score: {}", card, crupier.getScore());
         }
 
+        log.info("Crupier stands with score: {}", crupier.getScore());
         determineWinner();
     }
 
@@ -118,29 +95,23 @@ public class Game {
         if (gameStatus != GameStatus.PLAYER_TURN) {
             throw new NotPlayerTurnException("It's not your turn!");
         }
-        playerHand.add(drawCardFromDeck());
 
-        if (getPlayerScore() > 21) {
+        Card card = drawCardFromDeck();
+        player.receiveCard(card);
+        log.debug("Player drew: {}", card);
+
+        if (player.getStatus() == PlayerStatus.BUSTED) {
+            log.info("Player busted with score: {}", player.getScore());
             gameResult = GameResult.CRUPIER_WINS;
             gameStatus = GameStatus.FINISHED;
         }
     }
 
-    public void crupierHit() {
-        crupierHand.add(drawCardFromDeck());
-    }
 
-    public int getPlayerScore() {
-        return scoringService.calculateHandScore(playerHand);
-    }
-
-    public int getCrupierScore() {
-        return scoringService.calculateHandScore(crupierHand);
-    }
 
     public void determineWinner(){
-        int playerScore = getPlayerScore();
-        int crupierScore = getCrupierScore();
+        int playerScore = player.getScore();
+        int crupierScore = crupier.getScore();
 
 
       /*  Player Blackjack → Player wins 3:2 (unless crupier also has Blackjack = push)
@@ -150,11 +121,11 @@ public class Game {
         Crupier Score > Player Score → Crupier wins
         Scores Equal → Push (tie, nobody wins)*/
 
-        // Check for busts FIRST!
-        if (playerScore > 21) {
-            gameResult = GameResult.CRUPIER_WINS;  // Player busted
-        } else if (crupierScore > 21) {
-            gameResult = GameResult.PLAYER_WINS;   // Crupier busted
+        // Apply Blackjack rules
+        if (player.getStatus() == PlayerStatus.BUSTED) {
+            gameResult = GameResult.CRUPIER_WINS;
+        } else if (crupier.isBusted()) {
+            gameResult = GameResult.PLAYER_WINS;
         } else if (playerScore > crupierScore) {
             gameResult = GameResult.PLAYER_WINS;
         } else if (crupierScore > playerScore) {
@@ -163,44 +134,21 @@ public class Game {
             gameResult = GameResult.PUSH;
         }
 
-        log.info("Player: {}, Crupier: {}", playerScore, crupierScore);
+        log.info("Game ended. Player: {}, Crupier: {}, Result: {}",
+                playerScore, crupierScore, gameResult);
 
         gameStatus = GameStatus.FINISHED;
-
     }
 
-    public void playerStand(){
+    public void playerStand() {
         if (gameStatus != GameStatus.PLAYER_TURN) {
             throw new NotPlayerTurnException("It's not your turn!");
         }
-        this.gameStatus = GameStatus.CRUPIER_TURN;
+
+        player.stand();
+        log.info("Player stood with score: {}", player.getScore());
+        gameStatus = GameStatus.CRUPIER_TURN;
         crupierTurn();
     }
-
-    //Checks if a hand is a blackjack (21 on first 2 cards)
-
-    public boolean isBlackjack(List<Card> hand, int score) {
-        return score == 21 && hand.size() == 2;
-    }
-
-    //Determines the result when player has blackjack
-
-    public GameResult determineBlackjackResult(
-            List<Card> playerHand, int playerScore,
-            List<Card> crupierHand, int crupierScore) {
-
-        if (!isBlackjack(playerHand, playerScore)) {
-            throw new IllegalStateException("Player does not have blackjack");
-        }
-
-        // If crupier also has blackjack, it's a push
-        if (isBlackjack(crupierHand, crupierScore)) {
-            return GameResult.PUSH;
-        }
-
-        return GameResult.BLACKJACK;
-    }
-
-
 
 }

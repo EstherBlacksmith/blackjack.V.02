@@ -28,9 +28,9 @@ class GameTest {
         assertNotNull(game.getId(), "Game ID should not be null");
         assertNotNull(game.getDeck(), "Deck should be initialized");
         assertEquals(GameStatus.CREATED, game.getGameStatus(), "Initial status should be CREATED");
-        assertTrue(game.getPlayerHand().isEmpty(), "Player hand should be empty");
-        assertTrue(game.getCrupierHand().isEmpty(), "Crupier hand should be empty");
-        assertNull(game.getGameResult(), "Game result should be null initially");
+        assertTrue(game.getPlayer().getHand().isEmpty(), "Player hand should be empty");
+        assertTrue(game.getCrupier().getHand().isEmpty(), "Crupier hand should be empty");
+        assertEquals(GameResult.NO_RESULTS_YET,game.getGameResult(), "Game result shouldn't be null initially");
     }
 
     @Test
@@ -51,7 +51,7 @@ class GameTest {
 
 
         // Then: Player score should be 0 (no cards)
-        assertEquals(0, game.getPlayerScore(), "Player score should be 0 with no cards");
+        assertEquals(0, game.getPlayer().getScore(), "Player score should be 0 with no cards");
     }
 
     @Test
@@ -73,12 +73,12 @@ class GameTest {
     void testCrupierWinsWhenPlayerBusts() {
         // Given: A game where we manually set up a bust scenario
         Game game = new Game(scoringService);
-        game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
-        game.getPlayerHand().add(new Card(CardRank.KING, Suit.SPADES));
-        game.getPlayerHand().add(new Card(CardRank.TWO, Suit.CLUBS)); // Bust!
+        game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
+        game.getPlayer().receiveCard(new Card(CardRank.KING, Suit.SPADES));
+        game.getPlayer().receiveCard(new Card(CardRank.TWO, Suit.CLUBS)); // Bust!
 
-        game.getCrupierHand().add(new Card(CardRank.SIX, Suit.HEARTS));
-        game.getCrupierHand().add(new Card(CardRank.FIVE, Suit.SPADES));
+        game.getCrupier().receiveCard(new Card(CardRank.SIX, Suit.HEARTS));
+        game.getCrupier().receiveCard(new Card(CardRank.FIVE, Suit.SPADES));
 
         // When
         game.determineWinner();
@@ -92,12 +92,12 @@ class GameTest {
     void testPlayerWinsWhenCrupierBusts() {
         // Given: A game where crupier busts
         Game game = new Game(scoringService);
-        game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
-        game.getPlayerHand().add(new Card(CardRank.SIX, Suit.SPADES)); // 16
+        game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
+        game.getPlayer().receiveCard(new Card(CardRank.SIX, Suit.SPADES)); // 16
 
-        game.getCrupierHand().add(new Card(CardRank.TEN, Suit.HEARTS));
-        game.getCrupierHand().add(new Card(CardRank.KING, Suit.SPADES));
-        game.getCrupierHand().add(new Card(CardRank.FIVE, Suit.CLUBS)); // Bust!
+        game.getCrupier().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
+        game.getCrupier().receiveCard(new Card(CardRank.KING, Suit.SPADES));
+        game.getCrupier().receiveCard(new Card(CardRank.FIVE, Suit.CLUBS)); // Bust!
 
         // When
         game.determineWinner();
@@ -111,11 +111,11 @@ class GameTest {
         // Given: A tie game
         Game game = new Game(scoringService);
 
-        game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
-        game.getPlayerHand().add(new Card(CardRank.SIX, Suit.SPADES)); // 16
+        game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
+        game.getPlayer().receiveCard(new Card(CardRank.SIX, Suit.SPADES)); // 16
 
-        game.getCrupierHand().add(new Card(CardRank.KING, Suit.CLUBS));
-        game.getCrupierHand().add(new Card(CardRank.SIX, Suit.DIAMONDS)); // 16
+        game.getCrupier().receiveCard(new Card(CardRank.KING, Suit.CLUBS));
+        game.getCrupier().receiveCard(new Card(CardRank.SIX, Suit.DIAMONDS)); // 16
 
         // When
         game.determineWinner();
@@ -145,15 +145,13 @@ class GameTest {
         game.startGame();
 
         // Simulate game is finished
-        game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
-        game.getPlayerHand().add(new Card(CardRank.KING, Suit.SPADES));
-        game.getPlayerHand().add(new Card(CardRank.TWO, Suit.CLUBS)); // Bust!
+        game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
+        game.getPlayer().receiveCard(new Card(CardRank.KING, Suit.SPADES));
+        game.getPlayer().receiveCard(new Card(CardRank.TWO, Suit.CLUBS)); // Bust!
         game.determineWinner();
 
         // Then: hit should throw exception
-        assertThrows(NotPlayerTurnException.class, () -> {
-            game.playerHit();
-        });
+        assertThrows(NotPlayerTurnException.class, game::playerHit);
     }
 
     @Test
@@ -174,10 +172,10 @@ class GameTest {
     void testPlayerWinsWithHigherScore() {
         Game game = new Game(scoringService);
 
-        game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
-        game.getPlayerHand().add(new Card(CardRank.NINE, Suit.SPADES)); // 19
-        game.getCrupierHand().add(new Card(CardRank.TEN, Suit.CLUBS));
-        game.getCrupierHand().add(new Card(CardRank.SIX, Suit.DIAMONDS)); // 16
+        game.getCrupier().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
+        game.getCrupier().receiveCard(new Card(CardRank.SIX, Suit.DIAMONDS)); // 16
+        game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.CLUBS));
+        game.getPlayer().receiveCard(new Card(CardRank.NINE, Suit.SPADES)); // 19
 
         game.determineWinner();
 
@@ -188,10 +186,10 @@ class GameTest {
     void testCrupierWinsWithHigherScore() {
         Game game = new Game(scoringService);
 
-        game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
-        game.getPlayerHand().add(new Card(CardRank.FIVE, Suit.SPADES)); // 15
-        game.getCrupierHand().add(new Card(CardRank.TEN, Suit.CLUBS));
-        game.getCrupierHand().add(new Card(CardRank.SEVEN, Suit.DIAMONDS)); // 17
+        game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
+        game.getPlayer().receiveCard(new Card(CardRank.FIVE, Suit.SPADES)); // 15
+        game.getCrupier().receiveCard(new Card(CardRank.TEN, Suit.CLUBS));
+        game.getCrupier().receiveCard(new Card(CardRank.SEVEN, Suit.DIAMONDS)); // 17
 
         game.determineWinner();
 

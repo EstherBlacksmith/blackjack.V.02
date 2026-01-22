@@ -21,10 +21,10 @@ public class BlackjackApplication {
 
 		Game game = new Game(scoringService);
 		game.dealInitialCards();
-		System.out.println(game.getPlayerHand());
-		System.out.println(game.getCrupierHand());
-		System.out.println(game.getCrupierScore());
-		System.out.println(game.getPlayerScore());
+		System.out.println(game.getPlayer().getHand());
+		System.out.println(game.getCrupier().getHand());
+		System.out.println(game.getCrupier().getScore());
+		System.out.println(game.getPlayer().getScore());
 		game.determineWinner();
 	}
 
