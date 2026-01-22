@@ -1,5 +1,6 @@
 package com.itacademy.blackjack.exception;
 
+import com.itacademy.blackjack.game.model.exception.MissingIdentifierException;
 import com.itacademy.blackjack.game.model.exception.NotPlayerTurnException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,4 +24,11 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(MissingIdentifierException.class)
+    public ResponseEntity<ErrorResponse> handleMissingIdentifierException(NotPlayerTurnException ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()),
+                HttpStatus.BAD_REQUEST
+        );
+    }
 }
