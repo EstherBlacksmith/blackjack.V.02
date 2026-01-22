@@ -64,9 +64,7 @@ class GameTest {
         }
 
         // When/Then: Drawing from empty deck should throw exception
-        assertThrows(NoSuchElementException.class, () -> {
-            game.drawCardFromDeck();
-        }, "Should throw exception when drawing from empty deck");
+        assertThrows(NoSuchElementException.class, game::drawCardFromDeck, "Should throw exception when drawing from empty deck");
     }
 
     @Test
@@ -141,18 +139,18 @@ class GameTest {
     @Test
     void testPlayerHitThrowsExceptionWhenNotPlayerTurn() {
         Game game = new Game(scoringService);
-
         game.startGame();
 
-        // Simulate game is finished
-        game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
-        game.getPlayer().receiveCard(new Card(CardRank.KING, Suit.SPADES));
-        game.getPlayer().receiveCard(new Card(CardRank.TWO, Suit.CLUBS)); // Bust!
-        game.determineWinner();
+        // If player doesn't have blackjack, game status is PLAYER_TURN
+        // Player stands to end their turn
+        if (game.getGameStatus() == GameStatus.PLAYER_TURN) {
+            game.playerStand();  // Ends player turn
+        }
 
-        // Then: hit should throw exception
+        // Now hit should throw NotPlayerTurnException
         assertThrows(NotPlayerTurnException.class, game::playerHit);
     }
+
 
     @Test
     void testPlayerStandSwitchesToCrupierTurn() {
@@ -195,4 +193,69 @@ class GameTest {
 
         assertEquals(GameResult.CRUPIER_WINS, game.getGameResult());
     }
+
+
+    @Test
+    void testPlayerHitThrowsExceptionWhenGameNotStarted() {
+        // Given: A new game that hasn't started
+        Game game = new Game(scoringService);
+
+        // When/Then: Hit before game starts should throw
+        assertThrows(NotPlayerTurnException.class, game::playerHit, "Hit should throw when game hasn't started");
+    }
+
+    @Test
+    void testPlayerHitThrowsExceptionAfterPlayerStood() {
+        // Given: A game where player has stood
+        Game game = new Game(scoringService);
+        game.startGame();
+
+        // Player stands (only if it's their turn)
+        if (game.getGameStatus() == GameStatus.PLAYER_TURN) {
+            game.playerStand();
+        }
+
+        // When/Then: Hit after standing should throw
+        assertThrows(NotPlayerTurnException.class, game::playerHit, "Hit should throw after player stood");
+    }
+
+    @Test
+    void testPlayerHitThrowsExceptionWhenGameFinished() {
+        // Given: A finished game
+        Game game = new Game(scoringService);
+
+        // Force a finished state - player busts
+        game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
+        game.getPlayer().receiveCard(new Card(CardRank.KING, Suit.SPADES));
+        game.getPlayer().receiveCard(new Card(CardRank.TWO, Suit.CLUBS)); // Bust!
+        game.determineWinner();
+
+        // When/Then: Hit on finished game should throw
+        assertThrows(NotPlayerTurnException.class, game::playerHit, "Hit should throw when game is finished");
+    }
+
+    @Test
+    void testPlayerStandThrowsExceptionWhenGameNotStarted() {
+        // Given: A new game that hasn't started
+        Game game = new Game(scoringService);
+
+        // When/Then: Stand before game starts should throw
+        assertThrows(NotPlayerTurnException.class, game::playerStand, "Stand should throw when game hasn't started");
+    }
+
+    @Test
+    void testPlayerStandThrowsExceptionWhenAlreadyFinished() {
+        // Given: A finished game
+        Game game = new Game(scoringService);
+
+        // Force finish - player busts
+        game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
+        game.getPlayer().receiveCard(new Card(CardRank.KING, Suit.SPADES));
+        game.getPlayer().receiveCard(new Card(CardRank.TWO, Suit.CLUBS));
+        game.determineWinner();
+
+        // When/Then: Stand on finished game should throw
+        assertThrows(NotPlayerTurnException.class, game::playerStand, "Stand should throw when game is finished");
+    }
+
 }
