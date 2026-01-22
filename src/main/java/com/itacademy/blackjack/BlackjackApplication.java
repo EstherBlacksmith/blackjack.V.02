@@ -3,7 +3,7 @@ package com.itacademy.blackjack;
 import com.itacademy.blackjack.deck.model.Deck;
 import com.itacademy.blackjack.deck.model.ScoringService;
 
-import com.itacademy.blackjack.game.model.Game;
+import com.itacademy.blackjack.game.domain.model.Game;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

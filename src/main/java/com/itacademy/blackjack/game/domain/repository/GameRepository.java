@@ -1,6 +1,6 @@
-package com.itacademy.blackjack.game.repository;
+package com.itacademy.blackjack.game.domain.repository;
 
-import com.itacademy.blackjack.game.model.Game;
+import com.itacademy.blackjack.game.domain.model.Game;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;

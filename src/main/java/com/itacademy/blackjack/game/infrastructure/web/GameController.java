@@ -1,12 +1,13 @@
-package com.itacademy.blackjack.game.controller;
+package com.itacademy.blackjack.game.infrastructure.web;
 
 import com.itacademy.blackjack.deck.model.ScoringService;
-import com.itacademy.blackjack.game.dto.GameRequest;
-import com.itacademy.blackjack.game.dto.GameResponse;
-import com.itacademy.blackjack.game.model.Game;
-import com.itacademy.blackjack.game.model.exception.MissingIdentifierException;
 
-import com.itacademy.blackjack.game.service.GameService;
+import com.itacademy.blackjack.game.application.dto.GameRequest;
+import com.itacademy.blackjack.game.application.dto.GameResponse;
+import com.itacademy.blackjack.game.domain.model.Game;
+
+import com.itacademy.blackjack.game.application.GameService;
+import com.itacademy.blackjack.game.domain.model.exception.MissingIdentifierException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +36,8 @@ public class GameController {
         GameService gameService = new GameService(scoringService);
         return gameService.getGameById(id);
     }
+
+
 
 /*    @PostMapping("{id}/play")
     @ResponseStatus(HttpStatus.OK)

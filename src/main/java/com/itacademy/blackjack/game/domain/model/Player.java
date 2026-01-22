@@ -1,7 +1,8 @@
-package com.itacademy.blackjack.game.model;
+package com.itacademy.blackjack.game.domain.model;
 
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.ScoringService;
+
 import lombok.Getter;
 
 import java.util.UUID;

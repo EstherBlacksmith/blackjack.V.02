@@ -1,4 +1,4 @@
-package com.itacademy.blackjack.game.model.exception;
+package com.itacademy.blackjack.game.domain.model.exception;
 
 
 public class NotPlayerTurnException extends RuntimeException {

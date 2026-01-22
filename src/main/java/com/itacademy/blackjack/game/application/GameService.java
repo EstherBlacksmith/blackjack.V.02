@@ -1,11 +1,14 @@
-package com.itacademy.blackjack.game.service;
+package com.itacademy.blackjack.game.application;
 
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.ScoringService;
-import com.itacademy.blackjack.game.dto.CardResponse;
-import com.itacademy.blackjack.game.dto.GameResponse;
-import com.itacademy.blackjack.game.dto.PlayerResponse;
-import com.itacademy.blackjack.game.model.*;
+
+import com.itacademy.blackjack.game.application.dto.CardResponse;
+import com.itacademy.blackjack.game.application.dto.GameResponse;
+import com.itacademy.blackjack.game.application.dto.PlayerResponse;
+import com.itacademy.blackjack.game.domain.model.Crupier;
+import com.itacademy.blackjack.game.domain.model.Game;
+import com.itacademy.blackjack.game.domain.model.Player;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -74,6 +77,6 @@ public class GameService {
     }
 
     public Mono<Void> deleteById(UUID id) {
-        getGameById(id).;
-    }
-}
+        // TODO: Implement with repository
+        return Mono.empty();
+    }}

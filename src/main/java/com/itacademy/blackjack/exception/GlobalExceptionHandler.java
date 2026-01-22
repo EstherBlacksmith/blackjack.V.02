@@ -1,7 +1,8 @@
 package com.itacademy.blackjack.exception;
 
-import com.itacademy.blackjack.game.model.exception.MissingIdentifierException;
-import com.itacademy.blackjack.game.model.exception.NotPlayerTurnException;
+
+import com.itacademy.blackjack.game.domain.model.exception.MissingIdentifierException;
+import com.itacademy.blackjack.game.domain.model.exception.NotPlayerTurnException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

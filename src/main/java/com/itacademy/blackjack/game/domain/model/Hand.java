@@ -1,4 +1,4 @@
-package com.itacademy.blackjack.game.model;
+package com.itacademy.blackjack.game.domain.model;
 
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.ScoringService;

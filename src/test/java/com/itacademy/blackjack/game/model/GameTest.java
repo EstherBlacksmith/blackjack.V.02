@@ -1,10 +1,14 @@
 package com.itacademy.blackjack.game.model;
 
+
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.CardRank;
 import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.deck.model.Suit;
-import com.itacademy.blackjack.game.model.exception.NotPlayerTurnException;
+import com.itacademy.blackjack.game.domain.model.Game;
+import com.itacademy.blackjack.game.domain.model.GameResult;
+import com.itacademy.blackjack.game.domain.model.GameStatus;
+import com.itacademy.blackjack.game.domain.model.exception.NotPlayerTurnException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

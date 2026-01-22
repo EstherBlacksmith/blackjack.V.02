@@ -1,7 +1,9 @@
-package com.itacademy.blackjack.game.dto;
+package com.itacademy.blackjack.game.application.dto;
 
-import com.itacademy.blackjack.game.model.GameResult;
-import com.itacademy.blackjack.game.model.GameStatus;
+
+
+import com.itacademy.blackjack.game.domain.model.GameResult;
+import com.itacademy.blackjack.game.domain.model.GameStatus;
 
 import java.util.List;
 import java.util.UUID;

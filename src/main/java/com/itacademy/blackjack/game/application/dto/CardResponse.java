@@ -1,4 +1,4 @@
-package com.itacademy.blackjack.game.dto;
+package com.itacademy.blackjack.game.application.dto;
 
 public record CardResponse( String rank,    // "TEN", "JACK", "QUEEN", "KING", "ACE"
                             String suit,    // "HEARTS", "SPADES", "DIAMONDS", "CLUBS"

@@ -1,10 +1,10 @@
-package com.itacademy.blackjack.game.model;
+package com.itacademy.blackjack.game.domain.model;
 
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.Deck;
 import com.itacademy.blackjack.deck.model.ScoringService;
 
-import com.itacademy.blackjack.game.model.exception.NotPlayerTurnException;
+import com.itacademy.blackjack.game.domain.model.exception.NotPlayerTurnException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.itacademy.blackjack.game.dto;
+package com.itacademy.blackjack.game.application.dto;
 
 import jakarta.validation.Valid;
 
