@@ -3,7 +3,7 @@ package com.itacademy.blackjack.game.model;
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.Deck;
 import com.itacademy.blackjack.deck.model.ScoringService;
-import com.itacademy.blackjack.game.domain.BlackjackPolicy;
+
 import com.itacademy.blackjack.game.model.exception.NotPlayerTurnException;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,9 +48,8 @@ public class Game {
     private GameResult gameResult;
 
     private final ScoringService scoringService ;
-    private final BlackjackPolicy blackjackPolicy;
 
-    public Game(ScoringService scoringService, BlackjackPolicy blackjackPolicy) {
+    public Game(ScoringService scoringService) {
         this.id = UUID.randomUUID();
         this.gameStatus = GameStatus.CREATED;
         this.deck = new Deck();
@@ -58,7 +57,6 @@ public class Game {
         this.crupierHand = new ArrayList<>();
         this.gameResult = null;
         this.scoringService = scoringService;
-        this.blackjackPolicy = blackjackPolicy;
     }
 
     public Card drawCardFromDeck() {
@@ -82,8 +80,8 @@ public class Game {
         int playerScore = getPlayerScore();
         int crupierScore = getCrupierScore();
 
-        if (blackjackPolicy.isBlackjack(playerHand, playerScore)) {
-            gameResult = blackjackPolicy.determineBlackjackResult(
+        if (isBlackjack(playerHand, playerScore)) {
+            gameResult = determineBlackjackResult(
                     playerHand, playerScore, crupierHand, crupierScore
             );
             gameStatus = GameStatus.FINISHED;
@@ -179,7 +177,29 @@ public class Game {
         crupierTurn();
     }
 
+    //Checks if a hand is a blackjack (21 on first 2 cards)
 
+    public boolean isBlackjack(List<Card> hand, int score) {
+        return score == 21 && hand.size() == 2;
+    }
+
+    //Determines the result when player has blackjack
+
+    public GameResult determineBlackjackResult(
+            List<Card> playerHand, int playerScore,
+            List<Card> crupierHand, int crupierScore) {
+
+        if (!isBlackjack(playerHand, playerScore)) {
+            throw new IllegalStateException("Player does not have blackjack");
+        }
+
+        // If crupier also has blackjack, it's a push
+        if (isBlackjack(crupierHand, crupierScore)) {
+            return GameResult.PUSH;
+        }
+
+        return GameResult.BLACKJACK;
+    }
 
 
 

@@ -4,7 +4,6 @@ import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.CardRank;
 import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.deck.model.Suit;
-import com.itacademy.blackjack.game.domain.BlackjackPolicy;
 import com.itacademy.blackjack.game.model.exception.NotPlayerTurnException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,16 +15,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class GameTest {
 
     ScoringService scoringService ;
-    BlackjackPolicy blackjackPolicy;
     @BeforeEach
     public void setUp(){
          scoringService = new ScoringService();
-         blackjackPolicy = new BlackjackPolicy();
     }
     @Test
     void testGameInitialization() {
         // Given: A new Game instance
-        Game game = new Game(scoringService,blackjackPolicy);
+        Game game = new Game(scoringService);
 
         // Then: Verify all initial conditions
         assertNotNull(game.getId(), "Game ID should not be null");
@@ -39,7 +36,7 @@ class GameTest {
     @Test
     void testDeckIsShuffledOnInitialization() {
         // Given: A new Game instance
-        Game game = new Game(scoringService,blackjackPolicy);
+        Game game = new Game(scoringService);
 
 
         // Then: Verify deck has 52 cards
@@ -50,7 +47,7 @@ class GameTest {
     @Test
     void testPlayerScoreInitiallyZero() {
         // Given: A new Game instance
-        Game game = new Game(scoringService,blackjackPolicy);
+        Game game = new Game(scoringService);
 
 
         // Then: Player score should be 0 (no cards)
@@ -60,7 +57,7 @@ class GameTest {
     @Test
     void testDrawCardFromEmptyDeckThrowsException() {
         // Given: A game with all cards drawn
-        Game game = new Game(scoringService,blackjackPolicy);
+        Game game = new Game(scoringService);
 
         for (int i = 0; i < 52; i++) {
             game.drawCardFromDeck();
@@ -75,7 +72,8 @@ class GameTest {
     @Test
     void testCrupierWinsWhenPlayerBusts() {
         // Given: A game where we manually set up a bust scenario
-        Game game = new Game(scoringService,blackjackPolicy);        game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
+        Game game = new Game(scoringService);
+        game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
         game.getPlayerHand().add(new Card(CardRank.KING, Suit.SPADES));
         game.getPlayerHand().add(new Card(CardRank.TWO, Suit.CLUBS)); // Bust!
 
@@ -93,7 +91,8 @@ class GameTest {
     @Test
     void testPlayerWinsWhenCrupierBusts() {
         // Given: A game where crupier busts
-        Game game = new Game(scoringService,blackjackPolicy);        game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
+        Game game = new Game(scoringService);
+        game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
         game.getPlayerHand().add(new Card(CardRank.SIX, Suit.SPADES)); // 16
 
         game.getCrupierHand().add(new Card(CardRank.TEN, Suit.HEARTS));
@@ -110,7 +109,7 @@ class GameTest {
     @Test
     void testPushWhenScoresAreEqual() {
         // Given: A tie game
-        Game game = new Game(scoringService,blackjackPolicy);
+        Game game = new Game(scoringService);
 
         game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
         game.getPlayerHand().add(new Card(CardRank.SIX, Suit.SPADES)); // 16
@@ -128,7 +127,7 @@ class GameTest {
     @Test
     void testGameStatusTransitions() {
         // Given: A new game
-        Game game = new Game(scoringService,blackjackPolicy);
+        Game game = new Game(scoringService);
 
         assertEquals(GameStatus.CREATED, game.getGameStatus());
 
@@ -141,7 +140,7 @@ class GameTest {
 
     @Test
     void testPlayerHitThrowsExceptionWhenNotPlayerTurn() {
-        Game game = new Game(scoringService,blackjackPolicy);
+        Game game = new Game(scoringService);
 
         game.startGame();
 
@@ -159,7 +158,7 @@ class GameTest {
 
     @Test
     void testPlayerStandSwitchesToCrupierTurn() {
-        Game game = new Game(scoringService,blackjackPolicy);
+        Game game = new Game(scoringService);
 
         game.startGame();
 
@@ -173,7 +172,7 @@ class GameTest {
 
     @Test
     void testPlayerWinsWithHigherScore() {
-        Game game = new Game(scoringService,blackjackPolicy);
+        Game game = new Game(scoringService);
 
         game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
         game.getPlayerHand().add(new Card(CardRank.NINE, Suit.SPADES)); // 19
@@ -187,7 +186,7 @@ class GameTest {
 
     @Test
     void testCrupierWinsWithHigherScore() {
-        Game game = new Game(scoringService,blackjackPolicy);
+        Game game = new Game(scoringService);
 
         game.getPlayerHand().add(new Card(CardRank.TEN, Suit.HEARTS));
         game.getPlayerHand().add(new Card(CardRank.FIVE, Suit.SPADES)); // 15
