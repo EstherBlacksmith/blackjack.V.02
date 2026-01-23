@@ -20,4 +20,10 @@ public class GameRepository {
     public Optional<Game> findById(UUID id) {
         return Optional.ofNullable(games.get(id));
     }
+
+    public void delete(UUID id) {
+        games.remove(id);
+    }
+
+
 }

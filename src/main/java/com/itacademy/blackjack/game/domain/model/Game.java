@@ -105,8 +105,6 @@ public class Game {
         }
     }
 
-
-
     public void determineWinner(){
         int playerScore = player.getScore();
         int crupierScore = crupier.getScore();
