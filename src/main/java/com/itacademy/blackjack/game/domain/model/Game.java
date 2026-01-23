@@ -9,17 +9,23 @@ import com.itacademy.blackjack.player.domain.model.Player;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-
-
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 import java.util.UUID;
 
+@Document(collection = "games")
 @Slf4j
 public class Game {
     @Getter
     private UUID id;
     @Setter
     @Getter
+    @Field("gameStatus")
     private GameStatus gameStatus;
+    @Setter
+    @Getter
+    @Field("gameResult")
+    private GameResult gameResult;
     @Setter
     @Getter
     private Deck deck;
@@ -27,9 +33,7 @@ public class Game {
     private final Player player;
     @Getter
     private final Crupier crupier;
-    @Setter
-    @Getter
-    private GameResult gameResult;
+
 
     private final ScoringService scoringService ;
 

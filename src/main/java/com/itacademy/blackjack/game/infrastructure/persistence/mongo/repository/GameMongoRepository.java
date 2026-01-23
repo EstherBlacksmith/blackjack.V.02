@@ -1,5 +1,6 @@
-package com.itacademy.blackjack.game.infrastructure.persistence.mongo;
+package com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository;
 
+import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import reactor.core.publisher.Flux;
 /**

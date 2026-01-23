@@ -3,6 +3,8 @@ package com.itacademy.blackjack.game.infrastructure.persistence.mongo;
 import com.itacademy.blackjack.config.TestMongoConfig;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.GameStatus;
+import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
+import com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository.GameMongoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,7 +16,6 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 

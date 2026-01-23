@@ -1,4 +1,4 @@
-package com.itacademy.blackjack.game.infrastructure.persistence.mongo;
+package com.itacademy.blackjack.game.infrastructure.persistence.mongo.document;
 
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.GameStatus;
@@ -24,6 +24,7 @@ public class GameDocument {
     private String id;
 
     // Player information
+    private String playerId;
     private String playerName;
     private List<CardDocument> playerCards;
     private int playerScore;
