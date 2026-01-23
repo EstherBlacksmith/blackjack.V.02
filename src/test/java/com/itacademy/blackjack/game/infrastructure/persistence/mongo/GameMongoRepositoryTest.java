@@ -1,21 +1,22 @@
 package com.itacademy.blackjack.game.infrastructure.persistence.mongo;
 
-
 import com.itacademy.blackjack.config.TestMongoConfig;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.GameStatus;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import org.springframework.test.context.DynamicPropertySource;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -24,11 +25,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration test for MongoDB connectivity and GameDocument repository operations.
- *
- * This test verifies:
- * 1. MongoDB connection is working
- * 2. CRUD operations work correctly
- * 3. Custom query methods function as expected
  */
 @DataMongoTest
 @Import(TestMongoConfig.class)
@@ -36,7 +32,7 @@ class GameMongoRepositoryTest {
 
     @Container
     static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:6.0")
-            .withExposedPorts(27017);;
+            .withExposedPorts(27017);
 
     @DynamicPropertySource
     static void setProperties(DynamicPropertyRegistry registry) {
@@ -53,143 +49,206 @@ class GameMongoRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        // Clear any existing data before each test
         gameMongoRepository.deleteAll().block();
+        sampleGame = createSampleGame("TestPlayer", GameStatus.FINISHED, GameResult.PLAYER_WINS);
+    }
 
-        // Create a sample game document for testing
-        GameDocument.CardDocument card1 = GameDocument.CardDocument.builder()
-                .rank("ACE")
-                .suit("SPADES")
-                .value(11)
-                .build();
+    private GameDocument createSampleGame(String playerName, GameStatus status, GameResult result) {
+        GameDocument.CardDocument card1 = new GameDocument.CardDocument("ACE", "SPADES", 11);
+        GameDocument.CardDocument card2 = new GameDocument.CardDocument("KING", "HEARTS", 10);
 
-        GameDocument.CardDocument card2 = GameDocument.CardDocument.builder()
-                .rank("KING")
-                .suit("HEARTS")
-                .value(10)
-                .build();
-
-        sampleGame = GameDocument.builder()
-                .playerName("TestPlayer")
+        return GameDocument.builder()
+                .playerName(playerName)
                 .playerCards(Arrays.asList(card1, card2))
                 .playerScore(21)
-                .crupierCards(Arrays.asList(
-                        GameDocument.CardDocument.builder()
-                                .rank("TEN")
-                                .suit("DIAMONDS")
-                                .value(10)
-                                .build()
-                ))
+                .crupierCards(Arrays.asList(new GameDocument.CardDocument("TEN", "DIAMONDS", 10)))
                 .crupierScore(10)
-                .gameStatus(GameStatus.FINISHED)
-                .gameResult(GameResult.PLAYER_WINS)
+                .gameStatus(status)
+                .gameResult(result)
                 .createdAt(Instant.now())
                 .finishedAt(Instant.now())
                 .build();
     }
 
-    @Test
-    void testSaveAndFindById() {
-        // Given: A game document to save
+    @Nested
+    @DisplayName("Happy Path Tests - CRUD Operations")
+    class HappyPathTests {
 
-        // When: Save the document
-        Mono<GameDocument> savedGame = gameMongoRepository.save(sampleGame);
+        @Test
+        @DisplayName("Save and find game by ID")
+        void testSaveAndFindById() {
+            StepVerifier.create(gameMongoRepository.save(sampleGame))
+                    .assertNext(game -> {
+                        assertNotNull(game.getId(), "Saved game should have an ID");
+                        assertEquals("TestPlayer", game.getPlayerName(), "Player name should match");
+                        assertEquals(21, game.getPlayerScore(), "Player score should be 21");
+                        assertEquals(2, game.getPlayerCards().size(), "Player should have 2 cards");
+                    })
+                    .verifyComplete();
 
-        // Then: Verify save and find operations
-        StepVerifier.create(savedGame)
-                .assertNext(game -> {
-                    assertNotNull(game.getId(), "Saved game should have an ID");
-                    assertEquals("TestPlayer", game.getPlayerName(), "Player name should match");
-                    assertEquals(21, game.getPlayerScore(), "Player score should be 21");
-                    assertEquals(2, game.getPlayerCards().size(), "Player should have 2 cards");
-                })
-                .verifyComplete();
+            StepVerifier.create(gameMongoRepository.findById(sampleGame.getId()))
+                    .assertNext(game -> assertEquals(sampleGame.getPlayerName(), game.getPlayerName()))
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("Find games by player name")
+        void testFindByPlayerName() {
+            gameMongoRepository.save(sampleGame).block();
+
+            StepVerifier.create(gameMongoRepository.findByPlayerName("TestPlayer"))
+                    .assertNext(game -> assertEquals("TestPlayer", game.getPlayerName()))
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("Find games by game status")
+        void testFindByGameStatus() {
+            gameMongoRepository.save(sampleGame).block();
+
+            StepVerifier.create(gameMongoRepository.findByGameStatus("FINISHED"))
+                    .expectNextCount(1)
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("Find games by game result")
+        void testFindByGameResult() {
+            gameMongoRepository.save(sampleGame).block();
+
+            // FIXED: Compare enums directly instead of converting to String
+            StepVerifier.create(gameMongoRepository.findByGameResult("PLAYER_WINS"))
+                    .assertNext(game -> assertEquals(GameResult.PLAYER_WINS, game.getGameResult()))
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("Update game and verify persistence")
+        void testUpdateGame() {
+            GameDocument saved = gameMongoRepository.save(sampleGame).block();
+            assertNotNull(saved.getId());
+
+            saved.setGameStatus(GameStatus.FINISHED);
+            saved.setGameResult(GameResult.PLAYER_WINS);
+
+            StepVerifier.create(gameMongoRepository.save(saved))
+                    .assertNext(game -> {
+                        assertEquals(GameStatus.FINISHED, game.getGameStatus());
+                        assertEquals(GameResult.PLAYER_WINS, game.getGameResult());
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("Count all games")
+        void testCount() {
+            gameMongoRepository.save(sampleGame).block();
+            GameDocument anotherGame = createSampleGame("AnotherPlayer", GameStatus.FINISHED, GameResult.CRUPIER_WINS);
+            gameMongoRepository.save(anotherGame).block();
+
+            StepVerifier.create(gameMongoRepository.count())
+                    .expectNext(2L)
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("Find all games returns all saved games")
+        void testFindAllGames() {
+            gameMongoRepository.save(sampleGame).block();
+            GameDocument anotherGame = createSampleGame("AnotherPlayer", GameStatus.FINISHED, GameResult.CRUPIER_WINS);
+            gameMongoRepository.save(anotherGame).block();
+
+            StepVerifier.create(gameMongoRepository.findAll())
+                    .expectNextCount(2)
+                    .verifyComplete();
+        }
     }
 
-    @Test
-    void testFindByPlayerName() {
-        // Given: A saved game document
-        gameMongoRepository.save(sampleGame).block();
+    @Nested
+    @DisplayName("Sad Path Tests - Edge Cases & Error Handling")
+    class SadPathTests {
 
-        // When: Find games by player name
-        Flux<GameDocument> games = gameMongoRepository.findByPlayerName("TestPlayer");
+        @Test
+        @DisplayName("Find non-existent game returns empty")
+        void testFindNonExistentGame() {
+            StepVerifier.create(gameMongoRepository.findById("non-existent-id"))
+                    .expectNextCount(0)
+                    .verifyComplete();
+        }
 
-        // Then: Verify results
-        StepVerifier.create(games)
-                .assertNext(game -> {
-                    assertEquals("TestPlayer", game.getPlayerName());
-                })
-                .verifyComplete();
-    }
+        @Test
+        @DisplayName("Delete non-existent game should not throw")
+        void testDeleteNonExistentGame() {
+            StepVerifier.create(gameMongoRepository.deleteById("non-existent-id"))
+                    .verifyComplete();
+        }
 
-    @Test
-    void testFindByGameStatus() {
-        // Given: A game with FINISHED status
-        gameMongoRepository.save(sampleGame).block();
+        @Test
+        @DisplayName("Find by non-existent player name returns empty")
+        void testFindByNonExistentPlayerName() {
+            StepVerifier.create(gameMongoRepository.findByPlayerName("NonExistent"))
+                    .expectNextCount(0)
+                    .verifyComplete();
+        }
 
-        // When: Find games by status
-        Flux<GameDocument> finishedGames = gameMongoRepository.findByGameStatus("FINISHED");
+        @Test
+        @DisplayName("Delete game successfully")
+        void testDeleteGame() {
+            GameDocument saved = gameMongoRepository.save(sampleGame).block();
+            assertNotNull(saved.getId());
 
-        // Then: Verify we find the game
-        StepVerifier.create(finishedGames)
-                .expectNextCount(1)
-                .verifyComplete();
-    }
+            StepVerifier.create(gameMongoRepository.deleteById(saved.getId()))
+                    .verifyComplete();
 
-    @Test
-    void testFindByGameResult() {
-        // Given: A game where player won
-        gameMongoRepository.save(sampleGame).block();
+            StepVerifier.create(gameMongoRepository.findById(saved.getId()))
+                    .expectNextCount(0)
+                    .verifyComplete();
+        }
 
-        // When: Find games by result
-        Flux<GameDocument> wonGames = gameMongoRepository.findByGameResult("PLAYER_WINS");
+        @Test
+        @DisplayName("Complex game with multiple cards saves correctly")
+        void testComplexGameWithMultipleCards() {
+            GameDocument.CardDocument card1 = new GameDocument.CardDocument("ACE", "SPADES", 11);
+            GameDocument.CardDocument card2 = new GameDocument.CardDocument("KING", "HEARTS", 10);
+            GameDocument.CardDocument card3 = new GameDocument.CardDocument("THREE", "CLUBS", 3);
+            GameDocument.CardDocument card4 = new GameDocument.CardDocument("QUEEN", "DIAMONDS", 10);
+            GameDocument.CardDocument card5 = new GameDocument.CardDocument("SEVEN", "HEARTS", 7);
 
-        // Then: Verify we find the game
-        StepVerifier.create(wonGames)
-                .assertNext(game -> {
-                    assertEquals("PLAYER_WINS", game.getGameResult().toString());
-                })
-                .verifyComplete();
-    }
+            GameDocument complexGame = GameDocument.builder()
+                    .playerName("ComplexPlayer")
+                    .playerCards(Arrays.asList(card1, card2, card3))
+                    .playerScore(24)
+                    .crupierCards(Arrays.asList(card4, card5))
+                    .crupierScore(17)
+                    .gameStatus(GameStatus.FINISHED)
+                    .gameResult(GameResult.CRUPIER_WINS)
+                    .createdAt(Instant.now())
+                    .finishedAt(Instant.now())
+                    .build();
 
-    @Test
-    void testDeleteById() {
-        // Given: A saved game
-        GameDocument saved = gameMongoRepository.save(sampleGame).block();
-        assertNotNull(saved.getId());
+            StepVerifier.create(gameMongoRepository.save(complexGame))
+                    .assertNext(game -> {
+                        assertEquals(3, game.getPlayerCards().size());
+                        assertEquals(2, game.getCrupierCards().size());
+                    })
+                    .verifyComplete();
+        }
 
-        // When: Delete the game
-        Mono<Void> deleteResult = gameMongoRepository.deleteById(saved.getId());
+        @Test
+        @DisplayName("Multiple consecutive saves work correctly")
+        void testMultipleConsecutiveSaves() {
+            Mono<GameDocument> save1 = gameMongoRepository.save(
+                    createSampleGame("P1", GameStatus.FINISHED, GameResult.PLAYER_WINS));
+            Mono<GameDocument> save2 = gameMongoRepository.save(
+                    createSampleGame("P2", GameStatus.FINISHED, GameResult.CRUPIER_WINS));
 
-        // Then: Verify deletion
-        StepVerifier.create(deleteResult)
-                .verifyComplete();
+            // FIX: Use Mono.when() to wait for both without emitting values
+            StepVerifier.create(Mono.when(save1, save2))
+                    .verifyComplete();
 
-        // Verify the game is no longer findable
-        StepVerifier.create(gameMongoRepository.findById(saved.getId()))
-                .expectNextCount(0)
-                .verifyComplete();
-    }
-
-    @Test
-    void testCount() {
-        // Given: Multiple saved games
-        gameMongoRepository.save(sampleGame).block();
-
-        GameDocument anotherGame = GameDocument.builder()
-                .playerName("AnotherPlayer")
-                .playerScore(18)
-                .gameStatus(GameStatus.FINISHED)
-                .gameResult(GameResult.CRUPIER_WINS)
-                .build();
-        gameMongoRepository.save(anotherGame).block();
-
-        // When: Count all games
-        Mono<Long> count = gameMongoRepository.count();
-
-        // Then: Verify count is correct
-        StepVerifier.create(count)
-                .expectNext(2L)
-                .verifyComplete();
+            StepVerifier.create(gameMongoRepository.count())
+                    .expectNext(2L)
+                    .verifyComplete();
+        }
     }
 }
