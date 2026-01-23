@@ -1,7 +1,10 @@
 package com.itacademy.blackjack.deck.model;
 
+import org.springframework.stereotype.Service;
+
 import java.util.List;
 
+@Service
 public class ScoringService {
     public int calculateHandScore(List<Card> hand) {
         int score = hand.stream().mapToInt(Card::getNumericValue).sum();
