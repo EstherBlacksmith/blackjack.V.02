@@ -9,6 +9,9 @@ import com.itacademy.blackjack.game.application.dto.PlayerResponse;
 import com.itacademy.blackjack.game.domain.model.Crupier;
 import com.itacademy.blackjack.game.domain.model.Game;
 import com.itacademy.blackjack.game.domain.model.Player;
+import com.itacademy.blackjack.game.domain.model.exception.MissingIdentifierException;
+import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
+import com.itacademy.blackjack.game.domain.repository.GameRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -20,14 +23,18 @@ import java.util.stream.Collectors;
 public class GameService {
 
     private final ScoringService scoringService;
+    private final GameRepository gameRepository;
 
-    public GameService(ScoringService scoringService) {
+    public GameService(ScoringService scoringService, GameRepository gameRepository) {
         this.scoringService = scoringService;
+        this.gameRepository = gameRepository;
     }
 
     public Mono<GameResponse> startNewGame(UUID playerId) {
         Game game = new Game(scoringService);
         game.startGame();
+
+        gameRepository.save(game);
 
         GameResponse response = mapToResponse(game);
         return Mono.just(response);
@@ -72,11 +79,51 @@ public class GameService {
         return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
 
-    public Mono<Game> getGameById(UUID id) {
-        return getGameById(id);
+    public Mono<GameResponse> getGameById(UUID gameId) {
+        return Mono.justOrEmpty(gameRepository.findById(gameId))
+                .map(this::mapToResponse)
+                .switchIfEmpty(Mono.defer(() ->
+                        Mono.error(new ResourceNotFoundException("Game not found with id: " + gameId))));
     }
 
     public Mono<Void> deleteById(UUID id) {
-        // TODO: Implement with repository
+        gameRepository.delete(id);
         return Mono.empty();
-    }}
+    }
+
+    public Mono<GameResponse> playerHit(UUID gameId) {
+        // Get the actual Game entity from repository
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
+
+        // Execute the hit logic
+        game.playerHit();
+
+        // Save the updated game state
+        gameRepository.save(game);
+
+        // Return the response with updated game state
+        return Mono.just(mapToResponse(game));
+    }
+
+
+    public Mono<GameResponse> playerStand(UUID gameId) {
+        // Get the actual Game entity from repository
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
+
+        // Execute the stand logic (dealer plays, winner determined)
+        game.playerStand();
+
+        // Save the updated game state
+        gameRepository.save(game);
+
+        // Return the response with game result
+        return Mono.just(mapToResponse(game));
+    }
+
+
+
+
+}
+
