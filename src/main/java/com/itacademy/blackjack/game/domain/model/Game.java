@@ -5,6 +5,7 @@ import com.itacademy.blackjack.deck.model.Deck;
 import com.itacademy.blackjack.deck.model.ScoringService;
 
 import com.itacademy.blackjack.game.domain.model.exception.NotPlayerTurnException;
+import com.itacademy.blackjack.player.domain.model.Player;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -130,10 +131,16 @@ public class Game {
             gameResult = GameResult.PUSH;
         }
 
+        updatePlayerStatistics();
+
         log.info("Game ended. Player: {}, Crupier: {}, Result: {}",
                 playerScore, crupierScore, gameResult);
 
         gameStatus = GameStatus.FINISHED;
+    }
+
+    private void updatePlayerStatistics() {
+        player.applyGameResult(gameResult);
     }
 
     public void playerStand() {
