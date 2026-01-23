@@ -8,7 +8,6 @@ import com.itacademy.blackjack.game.domain.model.Hand;
 import com.itacademy.blackjack.game.domain.model.PlayerStatus;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Table;
 
 import java.util.UUID;
 
@@ -20,12 +19,13 @@ import java.util.UUID;
  * - Has a hand (value object) and status (enum)
  * - Can change state through defined actions
  */
-@Table("players")
+
+
 @Getter
 public class Player {
     @Id
-    private final UUID id;
-    private final String name;
+    private UUID id;
+    private String name;
     private Hand hand;
     private PlayerStatus status;
     private int wins;
@@ -40,6 +40,24 @@ public class Player {
         this.wins = 0;
         this.losses = 0;
         this.pushes = 0;
+    }
+    // FACTORY METHOD for the reconstruction from MYSQL
+    public static Player fromDatabase(UUID id, String name, int wins, int losses, int pushes) {
+        Player player = new Player();
+        player.id = id;
+        player.name = name;
+        player.wins = wins;
+        player.losses = losses;
+        player.pushes = pushes;
+        player.status = PlayerStatus.ACTIVE;
+
+        // Hand is empty for the new games
+        return player;
+    }
+
+    // Constructor for the factory methods
+    private Player() {
+        this.hand = new Hand(new ScoringService());
     }
 
     public void receiveCard(Card card) {
