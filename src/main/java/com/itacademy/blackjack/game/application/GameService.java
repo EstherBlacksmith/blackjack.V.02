@@ -33,10 +33,7 @@ public class GameService {
         Game game = new Game(scoringService);
         game.startGame();
 
-        gameRepository.save(game);
-
-        GameResponse response = mapToResponse(game);
-        return Mono.just(response);
+        return  gameRepository.save(game).map(this::mapToResponse);
     }
 
     private GameResponse mapToResponse(Game game) {
@@ -79,46 +76,31 @@ public class GameService {
     }
 
     public Mono<GameResponse> getGameById(UUID gameId) {
-        return Mono.justOrEmpty(gameRepository.findById(gameId))
+        return gameRepository.findById(gameId)
                 .map(this::mapToResponse)
-                .switchIfEmpty(Mono.defer(() ->
-                        Mono.error(new ResourceNotFoundException("Game not found with id: " + gameId))));
+                .switchIfEmpty(Mono.error(
+                        new ResourceNotFoundException("Game not found with id: " + gameId)));
     }
 
     public Mono<Void> deleteById(UUID id) {
-        gameRepository.delete(id);
-        return Mono.empty();
+        return gameRepository.delete(id);
     }
 
     public Mono<GameResponse> playerHit(UUID gameId) {
-        // Get the actual Game entity from repository
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
-
-        // Execute the hit logic
-        game.playerHit();
-
-        // Save the updated game state
-        gameRepository.save(game);
-
-        // Return the response with updated game state
-        return Mono.just(mapToResponse(game));
+        return gameRepository.findById(gameId)
+                .flatMap(game -> {game.playerHit();
+                return gameRepository.save(game);
+                })
+                .map(this::mapToResponse);
     }
 
 
     public Mono<GameResponse> playerStand(UUID gameId) {
-        // Get the actual Game entity from repository
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
-
-        // Execute the stand logic (dealer plays, winner determined)
-        game.playerStand();
-
-        // Save the updated game state
-        gameRepository.save(game);
-
-        // Return the response with game result
-        return Mono.just(mapToResponse(game));
+        return gameRepository.findById(gameId)
+                .flatMap(game -> {game.playerStand();
+                    return gameRepository.save(game);
+                })
+                .map(this::mapToResponse);
     }
 
 

@@ -1,7 +1,11 @@
 package com.itacademy.blackjack.game.infrastructure.persistence.mongo.mapper;
 
 import com.itacademy.blackjack.deck.model.Card;
+import com.itacademy.blackjack.deck.model.CardRank;
+import com.itacademy.blackjack.deck.model.Suit;
 import com.itacademy.blackjack.game.domain.model.Game;
+import com.itacademy.blackjack.game.domain.model.GameResult;
+import com.itacademy.blackjack.game.domain.model.GameStatus;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import org.springframework.stereotype.Component;
 
@@ -26,14 +30,38 @@ public class GameMapper {
                 .build();
     }
 
+    // GameDocument (MongoDB) → Game (dominio)
+    public Game toDomain(GameDocument document) {
+        return Game.reconstruct(
+                document.getId(),
+                document.getPlayerId(),
+                document.getPlayerName(),
+                document.getPlayerCards(),
+                document.getCrupierCards(),
+                document.getGameStatus(),
+                document.getGameResult()
+        );
+    }
+
     // Card (enum) → CardDocument (String)
     private List<GameDocument.CardDocument> toCardDocumentList(List<Card> cards) {
         return cards.stream()
                 .map(card -> GameDocument.CardDocument.builder()
-                        .rank(card.getRank().name())      // TWO → "TWO"
-                        .suit(card.getSuit().name())      // DIAMONDS → "DIAMONDS"
+                        .rank(card.getRank().name())
+                        .suit(card.getSuit().name())
                         .value(card.getNumericValue())
                         .build())
+                .collect(Collectors.toList());
+    }
+
+    // CardDocument (String) → Card (enum)
+    private List<Card> toCardList(List<GameDocument.CardDocument> cardDocuments) {
+        if (cardDocuments == null) return List.of();
+        return cardDocuments.stream()
+                .map(doc -> new Card(
+                        CardRank.valueOf(doc.getRank()),
+                        Suit.valueOf(doc.getSuit())
+                ))
                 .collect(Collectors.toList());
     }
 }

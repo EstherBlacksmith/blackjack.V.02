@@ -9,10 +9,7 @@ import reactor.core.publisher.Flux;
  */
 public interface GameMongoRepository extends ReactiveMongoRepository<GameDocument, String> {
 
-
     Flux<GameDocument> findByPlayerName(String playerName);
-
     Flux<GameDocument> findByGameStatus(String gameStatus);
-
     Flux<GameDocument> findByGameResult(String gameResult);
 }
