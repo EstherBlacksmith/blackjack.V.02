@@ -1,7 +1,12 @@
 package com.itacademy.blackjack.game.domain.model;
 
 import com.itacademy.blackjack.deck.model.Card;
+import com.itacademy.blackjack.deck.model.CardRank;
 import com.itacademy.blackjack.deck.model.ScoringService;
+import com.itacademy.blackjack.deck.model.Suit;
+import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
+
+import java.util.List;
 
 /**
  * Simple class representing the dealer (Crupier) in Blackjack.
@@ -44,4 +49,17 @@ public class Crupier {
     public Hand getHand() {
         return hand;
     }
+
+    public static Crupier reconstruct(List<GameDocument.CardDocument> cards) {
+        Crupier crupier = new Crupier(new ScoringService());
+        for (GameDocument.CardDocument cardDoc : cards) {
+            Card card = new Card(
+                    CardRank.valueOf(cardDoc.getRank()),
+                    Suit.valueOf(cardDoc.getSuit())
+            );
+            crupier.receiveCard(card);
+        }
+        return crupier;
+    }
+
 }
