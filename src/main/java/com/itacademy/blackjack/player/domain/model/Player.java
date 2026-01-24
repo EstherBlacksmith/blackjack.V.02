@@ -1,14 +1,18 @@
 package com.itacademy.blackjack.player.domain.model;
 
 import com.itacademy.blackjack.deck.model.Card;
+import com.itacademy.blackjack.deck.model.CardRank;
 import com.itacademy.blackjack.deck.model.ScoringService;
 
+import com.itacademy.blackjack.deck.model.Suit;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.Hand;
 import com.itacademy.blackjack.game.domain.model.PlayerStatus;
+import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -41,7 +45,7 @@ public class Player {
         this.losses = 0;
         this.pushes = 0;
     }
-    // FACTORY METHOD for the reconstruction from MYSQL
+    //  Factory method for the reconstruction from MYSQL
     public static Player fromDatabase(UUID id, String name, int wins, int losses, int pushes) {
         Player player = new Player();
         player.id = id;
@@ -58,6 +62,10 @@ public class Player {
     // Constructor for the factory methods
     private Player() {
         this.hand = new Hand(new ScoringService());
+    }
+    // Factory method public
+    public static Player createNew(String name, ScoringService scoringService) {
+        return new Player(name, scoringService);
     }
 
     public void receiveCard(Card card) {
@@ -95,10 +103,6 @@ public class Player {
         return status == PlayerStatus.ACTIVE;
     }
 
-    public boolean canAct() {
-        return status == PlayerStatus.ACTIVE;
-    }
-
     public void applyGameResult(GameResult result) {
         switch (result) {
             case PLAYER_WINS:
@@ -116,4 +120,23 @@ public class Player {
                 break;
         }
     }
+
+    public static Player reconstruct(UUID id, String name, List<GameDocument.CardDocument> cards) {
+        Player player = new Player();
+        player.id = id;
+        player.name = name;
+        player.status = PlayerStatus.ACTIVE;
+
+        // Add cards to hand
+        for (GameDocument.CardDocument cardDoc : cards) {
+            Card card = new Card(
+                    CardRank.valueOf(cardDoc.getRank()),
+                    Suit.valueOf(cardDoc.getSuit())
+            );
+            player.hand.addCard(card);
+        }
+
+        return player;
+    }
+
 }
