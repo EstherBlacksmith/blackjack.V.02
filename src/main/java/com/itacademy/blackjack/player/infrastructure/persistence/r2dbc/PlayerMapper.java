@@ -1,6 +1,7 @@
 package com.itacademy.blackjack.player.infrastructure.persistence.r2dbc;
 
 import com.itacademy.blackjack.player.domain.model.Player;
+import io.r2dbc.spi.Row;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
@@ -27,6 +28,15 @@ public class PlayerMapper {
                 entity.wins(),
                 entity.losses(),
                 entity.pushes()
+        );
+    }
+    public Player fromRow(Row row) {
+        return Player.fromDatabase(
+                UUID.fromString(row.get("id", String.class)),
+                row.get("name", String.class),
+                row.get("wins", Integer.class),
+                row.get("losses", Integer.class),
+                row.get("pushes", Integer.class)
         );
     }
 

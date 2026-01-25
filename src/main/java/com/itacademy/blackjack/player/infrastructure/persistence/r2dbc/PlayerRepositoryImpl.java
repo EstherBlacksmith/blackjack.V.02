@@ -1,0 +1,70 @@
+package com.itacademy.blackjack.player.infrastructure.persistence.r2dbc;
+
+import com.itacademy.blackjack.player.domain.model.Player;
+import io.r2dbc.spi.Readable;
+import com.itacademy.blackjack.player.domain.repository.PlayerRepository;
+import org.springframework.r2dbc.core.DatabaseClient;
+import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Mono;
+
+import java.util.UUID;
+
+@Repository
+public class PlayerRepositoryImpl implements PlayerRepository {
+
+    private final DatabaseClient client;
+    private final PlayerMapper mapper;
+
+    public PlayerRepositoryImpl(DatabaseClient client, PlayerMapper mapper) {
+        this.client = client;
+        this.mapper = mapper;
+    }
+
+    @Override
+    public Mono<Player> save(Player player) {
+        PlayerEntity entity = mapper.toEntity(player);
+        return client.sql(
+                        "INSERT INTO players (id, name, wins, losses, pushes) VALUES (?, ?, ?, ?, ?)"
+                )
+                .bind(0, entity.id())
+                .bind(1, entity.name())
+                .bind(2, entity.wins())
+                .bind(3, entity.losses())
+                .bind(4, entity.pushes())
+                .then()
+                .thenReturn(player);
+    }
+
+    @Override
+    public Mono<Void> deleteById(UUID id) {
+        return client.sql("DELETE FROM players WHERE id = ?")
+                .bind(0, id.toString())
+                .then();
+    }
+
+    @Override
+    public Mono<Player> findById(UUID playerId) {
+        return client.sql("SELECT * FROM players WHERE id = ?")
+                .bind(0, playerId.toString())
+                .map((io.r2dbc.spi.Readable row) -> mapRowToPlayer(row))
+                .first();
+    }
+
+    @Override
+    public Mono<Player> findByName(String name) {
+        return client.sql("SELECT * FROM players WHERE name = ?")
+                .bind(0, name)
+                .map((io.r2dbc.spi.Readable row) -> mapRowToPlayer(row))
+                .first();
+    }
+
+    private Player mapRowToPlayer(Readable row) {
+        return Player.fromDatabase(
+                UUID.fromString(row.get("id", String.class)),
+                row.get("name", String.class),
+                row.get("wins", Integer.class),
+                row.get("losses", Integer.class),
+                row.get("pushes", Integer.class)
+        );
+    }
+}
