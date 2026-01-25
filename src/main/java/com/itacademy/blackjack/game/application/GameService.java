@@ -2,15 +2,14 @@ package com.itacademy.blackjack.game.application;
 
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.ScoringService;
-
 import com.itacademy.blackjack.game.application.dto.CardResponse;
 import com.itacademy.blackjack.game.application.dto.GameResponse;
 import com.itacademy.blackjack.game.application.dto.PlayerResponse;
 import com.itacademy.blackjack.game.domain.model.Crupier;
 import com.itacademy.blackjack.game.domain.model.Game;
-import com.itacademy.blackjack.player.domain.model.Player;
 import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository.GameRepository;
+import com.itacademy.blackjack.player.domain.model.Player;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -33,7 +32,7 @@ public class GameService {
         Game game = new Game(scoringService);
         game.startGame();
 
-        return  gameRepository.save(game).map(this::mapToResponse);
+        return gameRepository.save(game).map(this::mapToResponse);
     }
 
     private GameResponse mapToResponse(Game game) {
@@ -68,7 +67,7 @@ public class GameService {
         String rank = capitalize(card.getRank().name().toLowerCase());
         String suit = capitalize(card.getSuit().name().toLowerCase());
         int value = card.getNumericValue();
-        return new CardResponse(rank, suit,value);
+        return new CardResponse(rank, suit, value);
     }
 
     private String capitalize(String s) {
@@ -85,6 +84,7 @@ public class GameService {
     public Mono<Void> deleteById(UUID id) {
         return gameRepository.deleteById(id);
     }
+
     public Mono<GameResponse> playerHit(UUID gameId) {
         return gameRepository.findById(gameId)
                 .switchIfEmpty(Mono.error(

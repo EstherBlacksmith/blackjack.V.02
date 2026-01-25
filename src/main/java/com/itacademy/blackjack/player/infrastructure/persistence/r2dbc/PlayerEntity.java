@@ -10,4 +10,5 @@ public record PlayerEntity(
         int wins,
         int losses,
         int pushes
-) {}
+) {
+}

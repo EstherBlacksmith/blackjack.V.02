@@ -1,9 +1,8 @@
 package com.itacademy.blackjack.game.infrastructure.web;
 
+import com.itacademy.blackjack.game.application.GameService;
 import com.itacademy.blackjack.game.application.dto.GameRequest;
 import com.itacademy.blackjack.game.application.dto.GameResponse;
-
-import com.itacademy.blackjack.game.application.GameService;
 import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

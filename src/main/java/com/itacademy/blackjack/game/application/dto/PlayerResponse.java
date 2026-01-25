@@ -12,4 +12,5 @@ public record PlayerResponse(
         List<CardResponse> hand,
         int score,
         PlayerStatus status
-) {}
+) {
+}

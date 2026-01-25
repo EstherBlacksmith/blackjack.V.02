@@ -14,4 +14,4 @@ public record GameResponse(
         List<CardResponse> crupierHand,
         int crupierScore
 ) {
-    }
+}

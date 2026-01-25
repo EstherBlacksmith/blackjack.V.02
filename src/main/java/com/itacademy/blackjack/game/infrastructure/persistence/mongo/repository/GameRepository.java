@@ -7,6 +7,8 @@ import java.util.UUID;
 
 public interface GameRepository {
     Mono<Game> save(Game game);
+
     Mono<Game> findById(UUID id);
+
     Mono<Void> deleteById(UUID id);
 }

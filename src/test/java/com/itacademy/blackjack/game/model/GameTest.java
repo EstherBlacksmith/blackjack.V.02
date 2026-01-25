@@ -18,11 +18,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class GameTest {
 
-    ScoringService scoringService ;
+    ScoringService scoringService;
+
     @BeforeEach
-    public void setUp(){
-         scoringService = new ScoringService();
+    public void setUp() {
+        scoringService = new ScoringService();
     }
+
     @Test
     void testGameInitialization() {
         // Given: A new Game instance
@@ -34,7 +36,7 @@ class GameTest {
         assertEquals(GameStatus.CREATED, game.getGameStatus(), "Initial status should be CREATED");
         assertTrue(game.getPlayer().getHand().isEmpty(), "Player hand should be empty");
         assertTrue(game.getCrupier().getHand().isEmpty(), "Crupier hand should be empty");
-        assertEquals(GameResult.NO_RESULTS_YET,game.getGameResult(), "Game result shouldn't be null initially");
+        assertEquals(GameResult.NO_RESULTS_YET, game.getGameResult(), "Game result shouldn't be null initially");
     }
 
     @Test

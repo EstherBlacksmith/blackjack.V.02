@@ -17,6 +17,18 @@ public class Crupier {
         this.hand = new Hand(scoringService);
     }
 
+    public static Crupier reconstruct(List<CardData> cards) {
+        Crupier crupier = new Crupier(new ScoringService());
+        for (CardData cardDoc : cards) {
+            Card card = new Card(
+                    CardRank.valueOf(cardDoc.rank()),
+                    Suit.valueOf(cardDoc.suit())
+            );
+            crupier.receiveCard(card);
+        }
+        return crupier;
+    }
+
     public void receiveCard(Card card) {
         hand.addCard(card);
     }
@@ -47,18 +59,6 @@ public class Crupier {
 
     public Hand getHand() {
         return hand;
-    }
-
-    public static Crupier reconstruct(List<CardData> cards) {
-        Crupier crupier = new Crupier(new ScoringService());
-        for (CardData cardDoc : cards) {
-            Card card = new Card(
-                    CardRank.valueOf(cardDoc.rank()),
-                    Suit.valueOf(cardDoc.suit())
-            );
-            crupier.receiveCard(card);
-        }
-        return crupier;
     }
 
 }

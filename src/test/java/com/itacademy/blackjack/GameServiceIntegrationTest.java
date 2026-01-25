@@ -156,6 +156,7 @@ class GameServiceIntegrationTest {
             }
         }
     }
+
     @Nested
     @DisplayName("Error Handling Tests - Sad Path")
     class ErrorHandlingTests {

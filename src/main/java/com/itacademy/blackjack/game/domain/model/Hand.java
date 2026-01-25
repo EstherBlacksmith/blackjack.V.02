@@ -4,7 +4,6 @@ import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.ScoringService;
 
 import java.util.ArrayList;
-
 import java.util.List;
 
 public final class Hand {

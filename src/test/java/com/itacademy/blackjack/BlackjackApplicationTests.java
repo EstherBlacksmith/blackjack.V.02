@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Import;
 @SpringBootTest
 @Import(TestMongoConfig.class)  // ADD THIS LINE
 class BlackjackApplicationTests {
-	@Test
-	void contextLoads() {
-	}
+    @Test
+    void contextLoads() {
+    }
 }

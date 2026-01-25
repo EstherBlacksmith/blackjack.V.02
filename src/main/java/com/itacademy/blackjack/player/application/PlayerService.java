@@ -1,7 +1,6 @@
 package com.itacademy.blackjack.player.application;
 
 import com.itacademy.blackjack.deck.model.ScoringService;
-
 import com.itacademy.blackjack.player.domain.model.Player;
 import com.itacademy.blackjack.player.infrastructure.persistence.r2dbc.PlayerEntity;
 import com.itacademy.blackjack.player.infrastructure.persistence.r2dbc.PlayerMapper;

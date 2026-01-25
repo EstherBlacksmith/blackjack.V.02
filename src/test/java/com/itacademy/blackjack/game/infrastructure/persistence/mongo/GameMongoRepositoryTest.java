@@ -18,7 +18,8 @@ import reactor.test.StepVerifier;
 import java.time.Instant;
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Integration test for MongoDB connectivity and GameDocument repository operations.

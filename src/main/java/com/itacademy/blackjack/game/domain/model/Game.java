@@ -3,19 +3,18 @@ package com.itacademy.blackjack.game.domain.model;
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.Deck;
 import com.itacademy.blackjack.deck.model.ScoringService;
-
 import com.itacademy.blackjack.game.domain.model.exception.NotPlayerTurnException;
 import com.itacademy.blackjack.player.domain.model.Player;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-
 import java.util.List;
 import java.util.UUID;
 
 @Slf4j
 public class Game {
+    private final ScoringService scoringService;
     @Getter
     @Setter
     private UUID id;
@@ -33,10 +32,7 @@ public class Game {
     private Player player;
     @Getter
     @Setter
-    private  Crupier crupier;
-
-
-    private final ScoringService scoringService ;
+    private Crupier crupier;
 
     public Game(ScoringService scoringService) {
         this.id = UUID.randomUUID();
@@ -46,6 +42,36 @@ public class Game {
         this.crupier = new Crupier(scoringService);
         this.gameResult = GameResult.NO_RESULTS_YET;
         this.scoringService = scoringService;
+    }
+
+    public static Game reconstruct(
+            String id,
+            String playerId,
+            String playerName,
+            List<CardData> playerCards,
+            List<CardData> crupierCards,
+            GameStatus gameStatus,
+            GameResult gameResult
+    ) {
+        Game game = new Game(null);
+        game.setId(UUID.fromString(id));
+        game.setGameStatus(gameStatus);
+        game.setGameResult(gameResult);
+        game.setDeck(new Deck());
+
+        // Reconstruct player with CardData
+        Player player = Player.reconstruct(
+                UUID.fromString(playerId),
+                playerName,
+                playerCards
+        );
+        game.setPlayer(player);
+
+        // Reconstruct crupier with CardData
+        Crupier crupier = Crupier.reconstruct(crupierCards);
+        game.setCrupier(crupier);
+
+        return game;
     }
 
     public Card drawCardFromDeck() {
@@ -111,7 +137,7 @@ public class Game {
         }
     }
 
-    public void determineWinner(){
+    public void determineWinner() {
         int playerScore = player.getScore();
         int crupierScore = crupier.getScore();
 
@@ -157,37 +183,6 @@ public class Game {
         log.info("Player stood with score: {}", player.getScore());
         gameStatus = GameStatus.CRUPIER_TURN;
         crupierTurn();
-    }
-
-
-    public static Game reconstruct(
-            String id,
-            String playerId,
-            String playerName,
-            List<CardData> playerCards,
-            List<CardData> crupierCards,
-            GameStatus gameStatus,
-            GameResult gameResult
-    ) {
-        Game game = new Game(null);
-        game.setId(UUID.fromString(id));
-        game.setGameStatus(gameStatus);
-        game.setGameResult(gameResult);
-        game.setDeck(new Deck());
-
-        // Reconstruct player with CardData
-        Player player = Player.reconstruct(
-                UUID.fromString(playerId),
-                playerName,
-                playerCards
-        );
-        game.setPlayer(player);
-
-        // Reconstruct crupier with CardData
-        Crupier crupier = Crupier.reconstruct(crupierCards);
-        game.setCrupier(crupier);
-
-        return game;
     }
 
 }

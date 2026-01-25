@@ -14,6 +14,13 @@ import java.util.stream.Collectors;
 @Component
 public class GameMapper {
 
+    private static List<CardData> toCardDataList(List<GameDocument.CardDocument> cardDocuments) {
+        if (cardDocuments == null) return List.of();
+        return cardDocuments.stream()
+                .map(doc -> new CardData(doc.getRank(), doc.getSuit(), doc.getValue()))
+                .collect(Collectors.toList());
+    }
+
     // Game (dominio) → GameDocument (MongoDB)
     public GameDocument toDocument(Game game) {
         return GameDocument.builder()
@@ -29,7 +36,6 @@ public class GameMapper {
                 .build();
     }
 
-
     // GameDocument (MongoDB) → Game (dominio)
     public Game toDomain(GameDocument document) {
         return Game.reconstruct(
@@ -41,13 +47,6 @@ public class GameMapper {
                 document.getGameStatus(),
                 document.getGameResult()
         );
-    }
-
-    private static List<CardData> toCardDataList(List<GameDocument.CardDocument> cardDocuments) {
-        if (cardDocuments == null) return List.of();
-        return cardDocuments.stream()
-                .map(doc -> new CardData(doc.getRank(), doc.getSuit(), doc.getValue()))
-                .collect(Collectors.toList());
     }
 
     // Card (enum) → CardDocument (String)
