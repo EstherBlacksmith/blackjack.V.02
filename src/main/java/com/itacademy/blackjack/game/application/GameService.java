@@ -10,6 +10,8 @@ import com.itacademy.blackjack.game.domain.model.Game;
 import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository.GameRepository;
 import com.itacademy.blackjack.player.domain.model.Player;
+import com.itacademy.blackjack.player.application.PlayerService;
+
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -20,19 +22,24 @@ import java.util.stream.Collectors;
 @Service
 public class GameService {
 
+    private final PlayerService playerService;
     private final ScoringService scoringService;
     private final GameRepository gameRepository;
 
-    public GameService(ScoringService scoringService, GameRepository gameRepository) {
+    public GameService(PlayerService playerService, ScoringService scoringService, GameRepository gameRepository) {
+        this.playerService = playerService;
         this.scoringService = scoringService;
         this.gameRepository = gameRepository;
     }
 
     public Mono<GameResponse> startNewGame(UUID playerId) {
-        Game game = new Game(scoringService);
-        game.startGame();
-
-        return gameRepository.save(game).map(this::mapToResponse);
+        return playerService.findById(playerId)
+                .switchIfEmpty(Mono.error(new ResourceNotFoundException("Player not found: " + playerId)))
+                .flatMap(player -> {
+                    Game game = new Game(scoringService);
+                    game.startGame();
+                    return gameRepository.save(game).map(this::mapToResponse);
+                });
     }
 
     private GameResponse mapToResponse(Game game) {

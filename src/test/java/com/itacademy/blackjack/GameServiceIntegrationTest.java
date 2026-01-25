@@ -1,12 +1,14 @@
 package com.itacademy.blackjack;
 
-import com.itacademy.blackjack.config.TestMongoConfig;
+import com.itacademy.blackjack.config.TestcontainersInitializer;
 import com.itacademy.blackjack.game.application.GameService;
 import com.itacademy.blackjack.game.application.dto.GameResponse;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.GameStatus;
 import com.itacademy.blackjack.game.domain.model.exception.NotPlayerTurnException;
 import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
+import com.itacademy.blackjack.player.application.PlayerService;
+import com.itacademy.blackjack.player.domain.model.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,8 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
+
 
 import java.util.UUID;
 
@@ -25,31 +26,34 @@ import static org.junit.jupiter.api.Assertions.*;
  * Comprehensive integration tests for GameService.
  * Tests cover game lifecycle, error handling, and edge cases.
  */
+@Import(TestcontainersInitializer.class)
 @SpringBootTest
-@Import(TestMongoConfig.class)
 class GameServiceIntegrationTest {
 
     @Autowired
     private GameService gameService;
 
-    @DynamicPropertySource
-    static void setProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri",
-                () -> "mongodb://localhost:27017/test_blackjack");
-    }
+    @Autowired
+    private PlayerService playerService;
+    private UUID testPlayerId;
 
     @BeforeEach
     void setUp() {
+        Player testPlayer = playerService.createPlayer("TestPlayer").block();
+        assertNotNull(testPlayer);
+        testPlayerId = testPlayer.getId();
     }
 
     @Nested
     @DisplayName("Game Lifecycle Tests - Happy Path")
     class GameLifecycleTests {
 
+
+
         @Test
         @DisplayName("Start new game - creates game with initial cards")
         void testStartNewGame() {
-            GameResponse game = gameService.startNewGame(UUID.randomUUID()).block();
+            GameResponse game = gameService.startNewGame(testPlayerId).block();
 
             assertNotNull(game, "Game response should not be null");
             assertNotNull(game.id(), "Game ID should not be null");
@@ -63,7 +67,7 @@ class GameServiceIntegrationTest {
         @Test
         @DisplayName("Complete game flow - player hits twice then stands")
         void testCompleteGameFlow_PlayerHitsTwiceThenStands() {
-            GameResponse game = gameService.startNewGame(UUID.randomUUID()).block();
+            GameResponse game = gameService.startNewGame(testPlayerId).block();
             assertNotNull(game);
             UUID gameId = game.id();
 
@@ -116,16 +120,18 @@ class GameServiceIntegrationTest {
         @Test
         @DisplayName("Game ID remains consistent throughout operations")
         void testGameIdConsistency() {
-            GameResponse game = gameService.startNewGame(UUID.randomUUID()).block();
+            GameResponse game = gameService.startNewGame(testPlayerId).block();
             assertNotNull(game);
             UUID originalGameId = game.id();
 
             GameResponse afterHit = gameService.playerHit(originalGameId).block();
+            assertNotNull(afterHit);
             UUID gameIdAfterHit = afterHit.id();
             assertEquals(originalGameId, gameIdAfterHit);
 
             if (afterHit.status() != GameStatus.FINISHED) {
                 GameResponse afterStand = gameService.playerStand(originalGameId).block();
+                assertNotNull(afterStand);
                 UUID gameIdAfterStand = afterStand.id();
                 assertEquals(originalGameId, gameIdAfterStand);
             }
@@ -134,8 +140,8 @@ class GameServiceIntegrationTest {
         @Test
         @DisplayName("Multiple games are isolated from each other")
         void testGameIsolation() {
-            GameResponse game1 = gameService.startNewGame(UUID.randomUUID()).block();
-            GameResponse game2 = gameService.startNewGame(UUID.randomUUID()).block();
+            GameResponse game1 = gameService.startNewGame(testPlayerId).block();
+            GameResponse game2 = gameService.startNewGame(testPlayerId).block();
 
             assertNotNull(game1);
             assertNotNull(game2);
@@ -147,6 +153,7 @@ class GameServiceIntegrationTest {
             // Hit on game1
             if (game1.status() == GameStatus.PLAYER_TURN) {
                 GameResponse afterHit = gameService.playerHit(game1.id()).block();
+                assertNotNull(afterHit);
                 assertNotEquals(game1InitialScore, afterHit.player().score());
 
                 // Verify game2 is unchanged
@@ -198,14 +205,16 @@ class GameServiceIntegrationTest {
         @DisplayName("Hit when game is finished throws NotPlayerTurnException")
         void testPlayerHitWhenGameFinished() {
             // Step 1: Start a new game
-            GameResponse game = gameService.startNewGame(UUID.randomUUID()).block();
+            GameResponse game = gameService.startNewGame(testPlayerId).block();
             assertNotNull(game);
             UUID gameId = game.id();
 
             // Step 2: Keep hitting until player busts (guaranteed to happen eventually)
             GameResponse currentGame = game;
             int hitCount = 0;
-            while (currentGame.status() == GameStatus.PLAYER_TURN && hitCount < 10) {
+            while (true) {
+                assertNotNull(currentGame);
+                if (!(currentGame.status() == GameStatus.PLAYER_TURN && hitCount < 10)) break;
                 currentGame = gameService.playerHit(gameId).block();
                 hitCount++;
             }
