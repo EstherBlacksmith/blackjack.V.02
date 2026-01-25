@@ -37,6 +37,7 @@ public class GameService {
                 .switchIfEmpty(Mono.error(new ResourceNotFoundException("Player not found: " + playerId)))
                 .flatMap(player -> {
                     Game game = new Game(scoringService);
+                    game.setPlayer(player);
                     game.startGame();
                     return gameRepository.save(game).map(this::mapToResponse);
                 });
@@ -109,11 +110,17 @@ public class GameService {
                         new ResourceNotFoundException("Game not found with id: " + gameId)))
                 .flatMap(game -> {
                     game.playerStand();
-                    return gameRepository.save(game);
+                    return gameRepository.save(game)
+                            .flatMap(savedGame -> {
+                                // Update player stats
+                                return playerService.updatePlayerStats(
+                                        savedGame.getPlayer().getId(),
+                                        savedGame.getGameResult()
+                                ).thenReturn(savedGame);
+                            });
                 })
                 .map(this::mapToResponse);
     }
-
 
 }
 
