@@ -29,6 +29,13 @@ public class PlayerController {
                 .map(this::toProfileResponse);
     }
 
+    @PostMapping("/login")
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<PlayerProfileResponse> loginOrCreate(@Valid @RequestBody CreatePlayerRequest request) {
+        return playerService.findOrCreatePlayer(request.name())
+                .map(this::toProfileResponse);
+    }
+
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public Mono<PlayerProfileResponse> getPlayerById(@PathVariable UUID id) {

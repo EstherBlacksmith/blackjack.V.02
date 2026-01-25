@@ -24,6 +24,14 @@ public class PlayerService {
         this.scoringService = scoringService;
     }
 
+    public Mono<Player> findOrCreatePlayer(String name) {
+        return playerRepository.findByName(name)
+                .switchIfEmpty(
+                        Mono.defer(() -> createPlayer(name))
+                );
+    }
+
+
     public Mono<Player> createPlayer(String name) {
         Player player = Player.createNew(name, scoringService);
         return playerRepository.save(player);
