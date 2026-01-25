@@ -7,6 +7,7 @@ import com.itacademy.blackjack.game.application.dto.GameResponse;
 import com.itacademy.blackjack.game.application.dto.PlayerResponse;
 import com.itacademy.blackjack.game.domain.model.Crupier;
 import com.itacademy.blackjack.game.domain.model.Game;
+import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository.GameRepository;
 import com.itacademy.blackjack.player.domain.model.Player;
@@ -99,10 +100,21 @@ public class GameService {
                         new ResourceNotFoundException("Game not found with id: " + gameId)))
                 .flatMap(game -> {
                     game.playerHit();
-                    return gameRepository.save(game);
+                    return gameRepository.save(game)
+                            .flatMap(savedGame -> {
+                                if (savedGame.getGameResult() != null &&
+                                        savedGame.getGameResult() != GameResult.NO_RESULTS_YET) {
+                                    return playerService.updatePlayerStats(
+                                            savedGame.getPlayer().getId(),
+                                            savedGame.getGameResult()
+                                    ).thenReturn(savedGame);
+                                }
+                                return Mono.just(savedGame);
+                            });
                 })
                 .map(this::mapToResponse);
     }
+
 
     public Mono<GameResponse> playerStand(UUID gameId) {
         return gameRepository.findById(gameId)

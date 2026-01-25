@@ -20,11 +20,12 @@ public class PlayerRepositoryImpl implements PlayerRepository {
         this.mapper = mapper;
     }
 
-    @Override
     public Mono<Player> save(Player player) {
         PlayerEntity entity = mapper.toEntity(player);
         return client.sql(
-                        "INSERT INTO players (id, name, wins, losses, pushes) VALUES (?, ?, ?, ?, ?)"
+                        "INSERT INTO players (id, name, wins, losses, pushes) VALUES (?, ?, ?, ?, ?) " +
+                                "ON DUPLICATE KEY UPDATE name = VALUES(name), wins = VALUES(wins), " +
+                                "losses = VALUES(losses), pushes = VALUES(pushes)"
                 )
                 .bind(0, entity.id())
                 .bind(1, entity.name())
@@ -34,6 +35,7 @@ public class PlayerRepositoryImpl implements PlayerRepository {
                 .then()
                 .thenReturn(player);
     }
+
 
     @Override
     public Mono<Void> deleteById(UUID id) {
