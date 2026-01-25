@@ -8,7 +8,8 @@ import com.itacademy.blackjack.game.application.GameService;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.GameStatus;
 import com.itacademy.blackjack.game.domain.model.PlayerStatus;
-import com.itacademy.blackjack.game.domain.repository.GameRepository;
+import com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository.GameRepository;
+import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +46,7 @@ class GameControllerTest {
     private UUID testGameId;
     private UUID testPlayerId;
     private GameResponse testGameResponse;
+    private GameDocument testGameDocument;
 
     @BeforeEach
     void setUp() {
