@@ -12,10 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.junit.jupiter.Container;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -31,17 +27,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @Import(TestMongoConfig.class)
 class GameMongoRepositoryTest {
 
-    @Container
-    static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:6.0")
-            .withExposedPorts(27017);
-
-    @DynamicPropertySource
-    static void setProperties(DynamicPropertyRegistry registry) {
-        if (!mongoDBContainer.isRunning()) {
-            mongoDBContainer.start();
-        }
-        registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
-    }
 
     @Autowired
     private GameMongoRepository gameMongoRepository;
