@@ -22,7 +22,7 @@ public class PlayerController {
         this.playerService = playerService;
     }
 
-    @PostMapping
+    @PostMapping("/new")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<PlayerProfileResponse> createPlayer(@Valid @RequestBody CreatePlayerRequest request) {
         return playerService.createPlayer(request.name())
