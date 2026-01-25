@@ -4,7 +4,6 @@ import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.CardRank;
 import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.deck.model.Suit;
-import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 
 import java.util.List;
 
@@ -50,12 +49,12 @@ public class Crupier {
         return hand;
     }
 
-    public static Crupier reconstruct(List<GameDocument.CardDocument> cards) {
+    public static Crupier reconstruct(List<CardData> cards) {
         Crupier crupier = new Crupier(new ScoringService());
-        for (GameDocument.CardDocument cardDoc : cards) {
+        for (CardData cardDoc : cards) {
             Card card = new Card(
-                    CardRank.valueOf(cardDoc.getRank()),
-                    Suit.valueOf(cardDoc.getSuit())
+                    CardRank.valueOf(cardDoc.rank()),
+                    Suit.valueOf(cardDoc.suit())
             );
             crupier.receiveCard(card);
         }

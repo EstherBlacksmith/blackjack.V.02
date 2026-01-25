@@ -5,10 +5,10 @@ import com.itacademy.blackjack.deck.model.CardRank;
 import com.itacademy.blackjack.deck.model.ScoringService;
 
 import com.itacademy.blackjack.deck.model.Suit;
+import com.itacademy.blackjack.game.domain.model.CardData;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.Hand;
 import com.itacademy.blackjack.game.domain.model.PlayerStatus;
-import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 
@@ -121,17 +121,17 @@ public class Player {
         }
     }
 
-    public static Player reconstruct(UUID id, String name, List<GameDocument.CardDocument> cards) {
+    public static Player reconstruct(UUID id, String name, List<CardData> cards) {
         Player player = new Player();
         player.id = id;
         player.name = name;
         player.status = PlayerStatus.ACTIVE;
 
         // Add cards to hand
-        for (GameDocument.CardDocument cardDoc : cards) {
+        for (CardData cardDoc : cards) {
             Card card = new Card(
-                    CardRank.valueOf(cardDoc.getRank()),
-                    Suit.valueOf(cardDoc.getSuit())
+                    CardRank.valueOf(cardDoc.rank()),
+                    Suit.valueOf(cardDoc.suit())
             );
             player.hand.addCard(card);
         }

@@ -1,7 +1,5 @@
 package com.itacademy.blackjack.game.application.dto;
 
-
-
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.GameStatus;
 
@@ -15,4 +13,5 @@ public record GameResponse(
         PlayerResponse player,
         List<CardResponse> crupierHand,
         int crupierScore
-) {}
+) {
+    }
