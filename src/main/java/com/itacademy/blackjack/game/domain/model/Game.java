@@ -5,18 +5,15 @@ import com.itacademy.blackjack.deck.model.Deck;
 import com.itacademy.blackjack.deck.model.ScoringService;
 
 import com.itacademy.blackjack.game.domain.model.exception.NotPlayerTurnException;
-import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import com.itacademy.blackjack.player.domain.model.Player;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
+
 
 import java.util.List;
 import java.util.UUID;
 
-@Document(collection = "games")
 @Slf4j
 public class Game {
     @Getter
@@ -24,11 +21,9 @@ public class Game {
     private UUID id;
     @Setter
     @Getter
-    @Field("gameStatus")
     private GameStatus gameStatus;
     @Setter
     @Getter
-    @Field("gameResult")
     private GameResult gameResult;
     @Setter
     @Getter
@@ -164,24 +159,23 @@ public class Game {
         crupierTurn();
     }
 
+
     public static Game reconstruct(
             String id,
             String playerId,
             String playerName,
-            List<GameDocument.CardDocument> playerCards,
-            List<GameDocument.CardDocument> crupierCards,
+            List<CardData> playerCards,
+            List<CardData> crupierCards,
             GameStatus gameStatus,
             GameResult gameResult
     ) {
         Game game = new Game(null);
-
-        // Use setters for all fields
         game.setId(UUID.fromString(id));
         game.setGameStatus(gameStatus);
         game.setGameResult(gameResult);
-        game.setDeck(new Deck()); // Deck cannot be reconstructed, create new one
+        game.setDeck(new Deck());
 
-        // Reconstruct player with cards
+        // Reconstruct player with CardData
         Player player = Player.reconstruct(
                 UUID.fromString(playerId),
                 playerName,
@@ -189,7 +183,7 @@ public class Game {
         );
         game.setPlayer(player);
 
-        // Reconstruct crupier with cards
+        // Reconstruct crupier with CardData
         Crupier crupier = Crupier.reconstruct(crupierCards);
         game.setCrupier(crupier);
 

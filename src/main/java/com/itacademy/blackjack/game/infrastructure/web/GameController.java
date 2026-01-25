@@ -1,15 +1,10 @@
 package com.itacademy.blackjack.game.infrastructure.web;
 
-import com.itacademy.blackjack.deck.model.ScoringService;
-
 import com.itacademy.blackjack.game.application.dto.GameRequest;
 import com.itacademy.blackjack.game.application.dto.GameResponse;
-import com.itacademy.blackjack.game.domain.model.Game;
 
 import com.itacademy.blackjack.game.application.GameService;
-import com.itacademy.blackjack.game.domain.model.exception.MissingIdentifierException;
 import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
-import com.itacademy.blackjack.game.domain.repository.GameRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -22,13 +17,9 @@ import java.util.UUID;
 public class GameController {
 
 
-    private final ScoringService scoringService;
-    private final GameRepository gameRepository;
     private final GameService gameService;
 
-    public GameController(ScoringService scoringService, GameRepository gameRepository, GameService gameService) {
-        this.scoringService = scoringService;
-        this.gameRepository = gameRepository;
+    public GameController(GameService gameService) {
         this.gameService = gameService;
     }
 

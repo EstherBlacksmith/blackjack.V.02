@@ -3,9 +3,8 @@ package com.itacademy.blackjack.game.infrastructure.persistence.mongo.mapper;
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.CardRank;
 import com.itacademy.blackjack.deck.model.Suit;
+import com.itacademy.blackjack.game.domain.model.CardData;
 import com.itacademy.blackjack.game.domain.model.Game;
-import com.itacademy.blackjack.game.domain.model.GameResult;
-import com.itacademy.blackjack.game.domain.model.GameStatus;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import org.springframework.stereotype.Component;
 
@@ -30,17 +29,25 @@ public class GameMapper {
                 .build();
     }
 
+
     // GameDocument (MongoDB) → Game (dominio)
     public Game toDomain(GameDocument document) {
         return Game.reconstruct(
                 document.getId(),
                 document.getPlayerId(),
                 document.getPlayerName(),
-                document.getPlayerCards(),
-                document.getCrupierCards(),
+                toCardDataList(document.getPlayerCards()),
+                toCardDataList(document.getCrupierCards()),
                 document.getGameStatus(),
                 document.getGameResult()
         );
+    }
+
+    private static List<CardData> toCardDataList(List<GameDocument.CardDocument> cardDocuments) {
+        if (cardDocuments == null) return List.of();
+        return cardDocuments.stream()
+                .map(doc -> new CardData(doc.getRank(), doc.getSuit(), doc.getValue()))
+                .collect(Collectors.toList());
     }
 
     // Card (enum) → CardDocument (String)

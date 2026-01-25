@@ -10,7 +10,7 @@ import com.itacademy.blackjack.game.domain.model.Crupier;
 import com.itacademy.blackjack.game.domain.model.Game;
 import com.itacademy.blackjack.player.domain.model.Player;
 import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
-import com.itacademy.blackjack.game.domain.repository.GameRepository;
+import com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository.GameRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -83,27 +83,29 @@ public class GameService {
     }
 
     public Mono<Void> deleteById(UUID id) {
-        return gameRepository.delete(id);
+        return gameRepository.deleteById(id);
     }
-
     public Mono<GameResponse> playerHit(UUID gameId) {
         return gameRepository.findById(gameId)
-                .flatMap(game -> {game.playerHit();
-                return gameRepository.save(game);
-                })
-                .map(this::mapToResponse);
-    }
-
-
-    public Mono<GameResponse> playerStand(UUID gameId) {
-        return gameRepository.findById(gameId)
-                .flatMap(game -> {game.playerStand();
+                .switchIfEmpty(Mono.error(
+                        new ResourceNotFoundException("Game not found with id: " + gameId)))
+                .flatMap(game -> {
+                    game.playerHit();
                     return gameRepository.save(game);
                 })
                 .map(this::mapToResponse);
     }
 
-
+    public Mono<GameResponse> playerStand(UUID gameId) {
+        return gameRepository.findById(gameId)
+                .switchIfEmpty(Mono.error(
+                        new ResourceNotFoundException("Game not found with id: " + gameId)))
+                .flatMap(game -> {
+                    game.playerStand();
+                    return gameRepository.save(game);
+                })
+                .map(this::mapToResponse);
+    }
 
 
 }
