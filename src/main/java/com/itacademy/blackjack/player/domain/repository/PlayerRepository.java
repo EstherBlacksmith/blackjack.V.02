@@ -10,4 +10,6 @@ public interface PlayerRepository {
     Mono<Player> save(Player player);
     Mono<Void> deleteById(UUID id);
     Mono<Player> findByName(String name);
+
+    Mono<Player> updateStats(UUID playerId, int wins, int losses, int pushes);
 }

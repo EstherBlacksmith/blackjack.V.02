@@ -1,6 +1,7 @@
 package com.itacademy.blackjack.player.application;
 
 import com.itacademy.blackjack.deck.model.ScoringService;
+import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.player.domain.model.Player;
 import com.itacademy.blackjack.player.domain.repository.PlayerRepository;
 import com.itacademy.blackjack.player.infrastructure.persistence.r2dbc.PlayerMapper;
@@ -31,4 +32,17 @@ public class PlayerService {
     public Mono<Player> findById(UUID playerId) {
         return playerRepository.findById(playerId);
     }
+
+    public Mono<Player> findByName(String name) {
+        return playerRepository.findByName(name);
+    }
+
+    public Mono<Player> updatePlayerStats(UUID playerId, GameResult result) {
+        return playerRepository.findById(playerId)
+                .flatMap(player -> {
+                    player.applyGameResult(result);
+                    return playerRepository.updateStats(playerId, player.getWins(), player.getLosses(), player.getPushes());
+                });
+    }
+
 }

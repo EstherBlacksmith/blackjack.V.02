@@ -67,4 +67,18 @@ public class PlayerRepositoryImpl implements PlayerRepository {
                 row.get("pushes", Integer.class)
         );
     }
+
+    @Override
+    public Mono<Player> updateStats(UUID playerId, int wins, int losses, int pushes) {
+        return client.sql(
+                        "UPDATE players SET wins = ?, losses = ?, pushes = ? WHERE id = ?"
+                )
+                .bind(0, wins)
+                .bind(1, losses)
+                .bind(2, pushes)
+                .bind(3, playerId.toString())
+                .then()
+                .thenReturn(Player.fromDatabase(playerId, null, wins, losses, pushes));
+    }
 }
+
