@@ -91,7 +91,34 @@ public class GameService {
     }
 
     public Mono<Void> deleteById(UUID id) {
-        return gameRepository.deleteById(id);
+        return gameRepository.findById(id)
+                .flatMap(game -> {
+                    UUID playerId = game.getPlayer().getId();
+
+                    return gameRepository.deleteById(id)
+                            .then(recalculatePlayerStats(playerId));
+                });
+    }
+
+    private Mono<Void> recalculatePlayerStats(UUID playerId) {
+        return gameRepository.findDocumentsByPlayerId(playerId)
+                .filter(game -> game.getGameResult() != null &&
+                        game.getGameResult() != GameResult.NO_RESULTS_YET)
+                .collectList()
+                .flatMap(games -> {
+                    long wins = games.stream()
+                            .filter(g -> g.getGameResult() == GameResult.PLAYER_WINS ||
+                                    g.getGameResult() == GameResult.BLACKJACK)
+                            .count();
+                    long losses = games.stream()
+                            .filter(g -> g.getGameResult() == GameResult.CRUPIER_WINS)
+                            .count();
+                    long pushes = games.stream()
+                            .filter(g -> g.getGameResult() == GameResult.PUSH)
+                            .count();
+
+                    return playerService.updateStatsOnly(playerId, (int) wins, (int) losses, (int) pushes);
+                });
     }
 
     public Mono<GameResponse> playerHit(UUID gameId) {

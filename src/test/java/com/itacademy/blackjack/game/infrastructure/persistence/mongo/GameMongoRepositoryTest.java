@@ -1,6 +1,5 @@
 package com.itacademy.blackjack.game.infrastructure.persistence.mongo;
 
-import com.itacademy.blackjack.config.TestMongoConfig;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.GameStatus;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
@@ -11,8 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
-import org.springframework.context.annotation.Import;
-import reactor.core.publisher.Mono;
+import org.springframework.context.annotation.Import;import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
@@ -25,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Integration test for MongoDB connectivity and GameDocument repository operations.
  */
 @DataMongoTest
-@Import(TestMongoConfig.class)
 class GameMongoRepositoryTest {
 
 
