@@ -228,14 +228,21 @@ class GameServiceIntegrationTest {
             assertNotNull(game);
             UUID gameId = game.id();
 
-            // Step 2: Keep hitting until player busts (guaranteed to happen eventually)
+            // Step 2: Keep hitting until player busts or max hits reached
             GameResponse currentGame = game;
+            int maxHits = 10;
             int hitCount = 0;
-            while (true) {
+
+            while (currentGame.status() == GameStatus.PLAYER_TURN && hitCount < maxHits) {
                 assertNotNull(currentGame);
-                if (!(currentGame.status() == GameStatus.PLAYER_TURN && hitCount < 10)) break;
                 currentGame = gameService.playerHit(gameId).block();
                 hitCount++;
+
+                // Safety check - if game ended, break
+                assertNotNull(currentGame);
+                if (currentGame.status() != GameStatus.PLAYER_TURN) {
+                    break;
+                }
             }
 
             // Step 3: Verify game is now FINISHED
@@ -248,51 +255,6 @@ class GameServiceIntegrationTest {
                     "Should throw NotPlayerTurnException when game is finished");
         }
 
-   /*     @Test
-        @DisplayName("Stand when game is finished throws NotPlayerTurnException")
-        void testPlayerStandWhenGameFinished() {
-            Game game = new Game(scoringService);
-            game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
-            game.getPlayer().receiveCard(new Card(CardRank.KING, Suit.SPADES));
-            game.getPlayer().receiveCard(new Card(CardRank.TWO, Suit.CLUBS)); // Bust!
-            game.determineWinner();
-
-            gameRepository.save(game);
-            UUID gameId = game.getId();
-
-            assertThrows(NotPlayerTurnException.class,
-                    () -> gameService.playerStand(gameId).block(),
-                    "Should throw NotPlayerTurnException when game is finished");
-        }
-
-        @Test
-        @DisplayName("Hit when not player's turn throws NotPlayerTurnException")
-        void testPlayerHitWhenNotPlayerTurn() {
-            Game game = new Game(scoringService);
-            game.startGame();
-
-            if (game.getGameStatus() == GameStatus.PLAYER_TURN) {
-                game.playerStand();
-            }
-
-            gameRepository.save(game);
-            UUID gameId = game.getId();
-
-            assertThrows(NotPlayerTurnException.class,
-                    () -> gameService.playerHit(gameId).block(),
-                    "Should throw NotPlayerTurnException when it's not player's turn");
-        }
-
-        @Test
-        @DisplayName("Delete non-existent game completes without error")
-        void testDeleteNonExistentGame() {
-            UUID nonExistentId = UUID.randomUUID();
-
-            // deleteById returns Mono<Void> and completes without error
-            StepVerifier.create(gameService.deleteById(nonExistentId))
-                    .verifyComplete();
-        }
-    }*/
     }
 
     @Nested
@@ -558,14 +520,24 @@ class GameServiceIntegrationTest {
         GameResponse game = gameService.startNewGame(testPlayerId).block();
         assertNotNull(game);
 
-        // Force a player win (simplified - actual test would hit until win)
-        while (game.status() == GameStatus.PLAYER_TURN) {
+        // Force a player win (hit until bust, win, or max hits)
+        int maxHits = 15;
+        while (game.status() == GameStatus.PLAYER_TURN && maxHits > 0) {
             game = gameService.playerHit(game.id()).block();
+            maxHits--;
+
+            // Exit if game ended
+            assertNotNull(game);
+            if (game.status() != GameStatus.PLAYER_TURN) {
+                break;
+            }
         }
+
 
         // If player won, verify stats
         if (game.result() == GameResult.PLAYER_WINS) {
             Player playerBefore = playerService.findById(testPlayerId).block();
+            assertNotNull(playerBefore);
             int winsBefore = playerBefore.getWins();
 
             // 2. Delete the game
@@ -573,6 +545,7 @@ class GameServiceIntegrationTest {
 
             // 3. Verify stats recalculated
             Player playerAfter = playerService.findById(testPlayerId).block();
+            assertNotNull(playerAfter);
             assertEquals(winsBefore - 1, playerAfter.getWins());
         }
     }

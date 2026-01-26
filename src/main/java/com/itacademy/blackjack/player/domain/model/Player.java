@@ -8,6 +8,7 @@ import com.itacademy.blackjack.game.domain.model.CardData;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.Hand;
 import com.itacademy.blackjack.game.domain.model.PlayerStatus;
+import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 
@@ -22,70 +23,144 @@ import java.util.UUID;
  * - Has a hand (value object) and status (enum)
  * - Can change state through defined actions
  */
-
-
 @Getter
 public class Player {
-    @Id
-    private UUID id;
-    private String name;
-    private Hand hand;
-    private PlayerStatus status;
+
+    private final UUID id;
+    private final String name;
+
     private int wins;
     private int losses;
     private int pushes;
+    private Hand hand;
+    private PlayerStatus status;
 
-    public Player(String name, ScoringService scoringService) {
-        this.id = UUID.randomUUID();
-        this.name = name;
-        this.hand = new Hand(scoringService);
-        this.status = PlayerStatus.ACTIVE;
-        this.wins = 0;
-        this.losses = 0;
-        this.pushes = 0;
+    //  PRIVATE CONSTRUCTOR (Only Builder can create)
+    private Player(Builder builder) {
+        this.id = builder.id;
+        this.name = builder.name;
+        this.wins = builder.wins;
+        this.losses = builder.losses;
+        this.pushes = builder.pushes;
+        this.hand = builder.hand != null ? builder.hand : new Hand(new ScoringService());
+        this.status = builder.status != null ? builder.status : PlayerStatus.ACTIVE;
     }
 
-    // Constructor for the factory methods
-    private Player() {
-        this.hand = new Hand(new ScoringService());
+    //  CUSTOM BUILDER
+    public static class Builder {
+        // Required fields
+        private UUID id;
+        private String name;
+        private int wins;
+        private int losses;
+        private int pushes;
+
+        private Hand hand = null;
+        private PlayerStatus status = null;
+
+        public Builder id(UUID id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+
+        public Builder wins(int wins) {
+            this.wins = wins;
+            return this;
+        }
+
+
+        public Builder losses(int losses) {
+            this.losses = losses;
+            return this;
+        }
+
+
+        public Builder pushes(int pushes) {
+            this.pushes = pushes;
+            return this;
+        }
+
+        // Optional: hand
+        public Builder hand(Hand hand) {
+            this.hand = hand;
+            return this;
+        }
+
+
+        public Builder status(PlayerStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        // Build method
+        public Player build() {
+            // Auto-generate id if not provided
+            UUID finalId = (id != null) ? id : UUID.randomUUID();
+
+            return new Player(this);
+        }
     }
 
-    //  Factory method for the reconstruction from MYSQL
-    public static Player fromDatabase(UUID id, String name, int wins, int losses, int pushes) {
-        Player player = new Player();
-        player.id = id;
-        player.name = name;
-        player.wins = wins;
-        player.losses = losses;
-        player.pushes = pushes;
-        player.status = PlayerStatus.ACTIVE;
-
-        // Hand is empty for the new games
-        return player;
+    // Static factory method to start building
+    public static Builder builder() {
+        return new Builder();
     }
 
-    // Factory method public
+    // FACTORY METHODS
+
     public static Player createNew(String name, ScoringService scoringService) {
-        return new Player(name, scoringService);
+        // Trust the name is already validated by the DTO
+
+        return Player.builder()
+                .id(UUID.randomUUID())
+                .name(name)
+                .wins(0)
+                .losses(0)
+                .pushes(0)
+                .hand(new Hand(scoringService))
+                .status(PlayerStatus.ACTIVE)
+                .build();
+    }
+
+    public static Player fromDatabase(UUID id, String name, int wins, int losses, int pushes) {
+        return Player.builder()
+                .id(id)
+                .name(name)
+                .wins(wins)
+                .losses(losses)
+                .pushes(pushes)
+                .status(PlayerStatus.ACTIVE)
+                .build();
     }
 
     public static Player reconstruct(UUID id, String name, List<CardData> cards) {
-        Player player = new Player();
-        player.id = id;
-        player.name = name;
-        player.status = PlayerStatus.ACTIVE;
+        Builder builder = Player.builder()
+                .id(id)
+                .name(name)
+                .status(PlayerStatus.ACTIVE);
 
-        // Add cards to hand
-        for (CardData cardDoc : cards) {
-            Card card = new Card(
-                    CardRank.valueOf(cardDoc.rank()),
-                    Suit.valueOf(cardDoc.suit())
-            );
-            player.hand.addCard(card);
+        if (cards != null && !cards.isEmpty()) {
+            Hand hand = new Hand(new ScoringService());
+            for (CardData cardDoc : cards) {
+                Card card = new Card(
+                        CardRank.valueOf(cardDoc.rank()),
+                        Suit.valueOf(cardDoc.suit())
+                );
+                hand.addCard(card);
+            }
+            builder.hand(hand);
         }
 
-        return player;
+        return builder.build();
     }
+
+    // DOMAIN METHODS
 
     public void receiveCard(Card card) {
         if (status != PlayerStatus.ACTIVE) {
@@ -143,5 +218,4 @@ public class Player {
     public PlayerStats getStats() {
         return new PlayerStats(wins, losses, pushes);
     }
-
 }

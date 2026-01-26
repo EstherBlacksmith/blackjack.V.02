@@ -17,7 +17,7 @@ class PlayerTest {
     @BeforeEach
     void setUp() {
         scoringService = new ScoringService();
-        player = new Player("TestPlayer", scoringService);
+        player = Player.createNew("TestPlayer", scoringService);
     }
 
     @Nested
@@ -121,7 +121,7 @@ class PlayerTest {
         @DisplayName("Statistics should be independent for different players")
         void differentPlayers_haveIndependentStatistics() {
             // Given
-            Player player2 = new Player("Player2", scoringService);
+            Player player2 = Player.createNew("Player2", scoringService);
 
             // When
             player.applyGameResult(GameResult.PLAYER_WINS);
@@ -251,8 +251,8 @@ class PlayerTest {
         @DisplayName("Player name should not affect statistics")
         void statistics_independentOfPlayerName() {
             // Given - Two players with different names
-            Player player1 = new Player("ShortName", scoringService);
-            Player player2 = new Player("VeryLongPlayerNameForTesting", scoringService);
+            Player player1 = Player.createNew("ShortName", scoringService);
+            Player player2 = Player.createNew("VeryLongPlayerNameForTesting", scoringService);
 
             // When - Apply same results
             for (int i = 0; i < 5; i++) {
