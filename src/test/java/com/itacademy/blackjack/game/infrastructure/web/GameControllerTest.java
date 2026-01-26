@@ -147,6 +147,70 @@ class GameControllerTest {
     }
 
     @Test
+    void testCrupierHit_ReturnsUpdatedGame() {
+        // Given: A game with CRUPIER_TURN status
+        GameResponse crupierTurnResponse = new GameResponse(
+                testGameId,
+                GameStatus.CRUPIER_TURN,  // Changed to CRUPIER_TURN
+                GameResult.NO_RESULTS_YET,
+                new PlayerResponse(
+                        testPlayerId,
+                        "TestPlayer",
+                        List.of(new CardResponse("Ace", "Spades", 11)),
+                        21,
+                        PlayerStatus.STOOD
+                ),
+                List.of(
+                        new CardResponse("Ten", "Hearts", 10),
+                        new CardResponse("Five", "Diamonds", 5)
+                ),
+                15
+        );
+        when(gameService.crupierHitOneCard(testGameId)).thenReturn(Mono.just(crupierTurnResponse));
+
+        // When & Then
+        webTestClient.post()
+                .uri("/games/{id}/crupier-hit", testGameId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo(testGameId.toString())
+                .jsonPath("$.status").isEqualTo("CRUPIER_TURN");
+    }
+
+    @Test
+    void testCrupierHit_ReturnsFinishedGame_WhenCrupierStands() {
+        // Given: A game where crupier will stand after this hit
+        GameResponse finishedResponse = new GameResponse(
+                testGameId,
+                GameStatus.FINISHED,
+                GameResult.PLAYER_WINS,
+                new PlayerResponse(
+                        testPlayerId,
+                        "TestPlayer",
+                        List.of(new CardResponse("Ace", "Spades", 11)),
+                        21,
+                        PlayerStatus.STOOD
+                ),
+                List.of(
+                        new CardResponse("Ten", "Hearts", 10),
+                        new CardResponse("Seven", "Diamonds", 17)
+                ),
+                17
+        );
+        when(gameService.crupierHitOneCard(testGameId)).thenReturn(Mono.just(finishedResponse));
+
+        // When & Then
+        webTestClient.post()
+                .uri("/games/{id}/crupier-hit", testGameId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.status").isEqualTo("FINISHED")
+                .jsonPath("$.result").isEqualTo("PLAYER_WINS");
+    }
+
+    @Test
     void testDeleteGame_ReturnsNoContent() {
         // Given
         when(gameService.deleteById(testGameId)).thenReturn(Mono.empty());

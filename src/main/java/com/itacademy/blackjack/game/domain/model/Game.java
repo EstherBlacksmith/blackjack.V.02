@@ -182,7 +182,21 @@ public class Game {
         player.stand();
         log.info("Player stood with score: {}", player.getScore());
         gameStatus = GameStatus.CRUPIER_TURN;
-        crupierTurn();
     }
 
+    public void crupierHitOneCard() {
+        if (gameStatus != GameStatus.CRUPIER_TURN) {
+            throw new NotPlayerTurnException("Not crupier turn!");
+        }
+
+        if (crupier.mustHit()) {
+            Card card = drawCardFromDeck();
+            crupier.receiveCard(card);
+            log.debug("Crupier drew: {}. New score: {}", card, crupier.getScore());
+        }
+
+        if (!crupier.mustHit()) {
+            determineWinner();
+        }
+    }
 }

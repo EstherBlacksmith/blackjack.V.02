@@ -134,5 +134,16 @@ public class GameService {
                 .map(this::mapToResponse);
     }
 
+    public Mono<GameResponse> crupierHitOneCard(UUID gameId) {
+        return gameRepository.findById(gameId)
+                .switchIfEmpty(Mono.error(
+                        new ResourceNotFoundException("Game not found with id: " + gameId)))
+                .flatMap(game -> {
+                    game.crupierHitOneCard();
+                    return gameRepository.save(game);
+                })
+                .map(this::mapToResponse);
+    }
+
 }
 

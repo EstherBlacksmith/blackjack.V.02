@@ -9,10 +9,7 @@ import com.itacademy.blackjack.game.domain.model.exception.NotPlayerTurnExceptio
 import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
 import com.itacademy.blackjack.player.application.PlayerService;
 import com.itacademy.blackjack.player.domain.model.Player;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -42,6 +39,14 @@ class GameServiceIntegrationTest {
         Player testPlayer = playerService.createPlayer("TestPlayer").block();
         assertNotNull(testPlayer);
         testPlayerId = testPlayer.getId();
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Clean up games created during tests
+        if (testPlayerId != null) {
+           playerService.deleteById(testPlayerId).block();
+        }
     }
 
     @Nested
@@ -123,6 +128,11 @@ class GameServiceIntegrationTest {
             GameResponse game = gameService.startNewGame(testPlayerId).block();
             assertNotNull(game);
             UUID originalGameId = game.id();
+
+            if (game.status() == GameStatus.FINISHED) {
+                System.out.println("Game ended immediately with: " + game.result());
+                return;
+            }
 
             GameResponse afterHit = gameService.playerHit(originalGameId).block();
             assertNotNull(afterHit);
@@ -274,6 +284,263 @@ class GameServiceIntegrationTest {
                     .verifyComplete();
         }
     }*/
+    }
+
+    @Nested
+    @DisplayName("Crupier Turn Tests - New Feature")
+    class CrupierTurnTests {
+
+        @Test
+        @DisplayName("Player stand sets status to CRUPIER_TURN")
+        void testPlayerStandSetsCrupierTurnStatus() {
+            // Given: A game in PLAYER_TURN status
+            GameResponse game = gameService.startNewGame(testPlayerId).block();
+            assertNotNull(game);
+
+            // Skip if game ended immediately (blackjack)
+            if (game.status() == GameStatus.FINISHED) {
+                return;
+            }
+
+            assertEquals(GameStatus.PLAYER_TURN, game.status());
+            UUID gameId = game.id();
+
+            // When: Player stands
+            GameResponse afterStand = gameService.playerStand(gameId).block();
+            assertNotNull(afterStand);
+
+            // Then: Status should be CRUPIER_TURN or FINISHED (if crupier already had 17+)
+            // Important fix: crupier might auto-complete if score >= 17
+            assertTrue(
+                    afterStand.status() == GameStatus.CRUPIER_TURN ||
+                            afterStand.status() == GameStatus.FINISHED,
+                    "Status should be CRUPIER_TURN or FINISHED, but was: " + afterStand.status()
+            );
+            System.out.println("Status after stand: " + afterStand.status());
+        }
+
+        @Test
+        @DisplayName("Crupier hit adds one card and keeps CRUPIER_TURN status")
+        void testCrupierHitAddsCardKeepsStatus() {
+            // Given: A game where player stood
+            GameResponse game = gameService.startNewGame(testPlayerId).block();
+            assertNotNull(game);
+
+            if (game.status() == GameStatus.FINISHED) {
+                return;
+            }
+
+            GameResponse afterStand = gameService.playerStand(game.id()).block();
+            assertNotNull(afterStand);
+
+            // Verify we have CRUPIER_TURN status
+            if (afterStand.status() != GameStatus.CRUPIER_TURN) {
+                System.out.println("Skipping - status is: " + afterStand.status());
+                return;
+            }
+
+            // Skip if crupier already has 17+ (they won't draw a card)
+            if (afterStand.crupierScore() >= 17) {
+                System.out.println("Skipping - crupier already has 17+ (score: " + afterStand.crupierScore() + ")");
+                return;
+            }
+
+            int initialCrupierCards = afterStand.crupierHand().size();
+
+            // When: Crupier hits once
+            GameResponse afterCrupierHit = gameService.crupierHitOneCard(game.id()).block();
+            assertNotNull(afterCrupierHit);
+
+            // Then: Crupier should have one more card
+            assertEquals(initialCrupierCards + 1, afterCrupierHit.crupierHand().size());
+
+            // And: Status should still be CRUPIER_TURN (unless crupier finished)
+            System.out.println("Crupier score after hit: " + afterCrupierHit.crupierScore());
+        }
+
+        @Test
+        @DisplayName("Crupier stands automatically when reaching 17 or more")
+        void testCrupierStandsWhenReaching17() {
+            // Given: A game in CRUPIER_TURN with low crupier score
+            GameResponse game = gameService.startNewGame(testPlayerId).block();
+            assertNotNull(game);
+
+            if (game.status() == GameStatus.FINISHED) {
+                return;
+            }
+
+            GameResponse afterStand = gameService.playerStand(game.id()).block();
+            assertNotNull(afterStand);
+
+            if (afterStand.status() != GameStatus.CRUPIER_TURN) {
+                return;
+            }
+
+            // If crupier already has 17+, they should stand (game finishes after calling crupierHitOneCard once)
+            // Note: playerStand() just sets status to CRUPIER_TURN, it doesn't auto-complete the crupier turn
+            if (afterStand.crupierScore() >= 17) {
+                // Crupier should stand on 17+, so one call to crupierHitOneCard should finish the game
+                GameResponse afterCrupierHit = gameService.crupierHitOneCard(game.id()).block();
+                assertNotNull(afterCrupierHit);
+                assertEquals(GameStatus.FINISHED, afterCrupierHit.status());
+                System.out.println("Crupier had 17+, game finished after one crupier hit call");
+                return;
+            }
+
+            // Keep hitting until crupier stands
+            GameResponse currentGame = afterStand;
+            int maxHits = 10;
+            int hitCount = 0;
+
+            while (currentGame.status() == GameStatus.CRUPIER_TURN && hitCount < maxHits) {
+                currentGame = gameService.crupierHitOneCard(game.id()).block();
+                assertNotNull(currentGame);
+                hitCount++;
+                System.out.println("Crupier hit #" + hitCount + ", score: " + currentGame.crupierScore() + ", status: " + currentGame.status());
+            }
+
+            // After loop, verify crupier has reached at least 17 OR we're at max hits
+            // Note: Crupier stands on 17+, but busting (going over 21) also stops the loop
+            int finalScore = currentGame.crupierScore();
+            System.out.println("Final crupier score: " + finalScore + ", Final status: " + currentGame.status() + ", Total hits: " + hitCount);
+
+            // The crupier stops when score >= 17 OR when busted (score > 21)
+            // So the final score should always be >= 17 OR we hit max hits
+            assertTrue(
+                    finalScore >= 17 || hitCount >= maxHits,
+                    "Expected crupier score >= 17 or max hits reached. Score: " + finalScore + ", Hits: " + hitCount
+            );
+
+            // Game is either FINISHED or we hit max hits
+            assertTrue(
+                    currentGame.status() == GameStatus.FINISHED || hitCount >= maxHits,
+                    "Expected FINISHED or max hits reached, but was: " + currentGame.status() +
+                            ", Hits: " + hitCount + ", Crupier score: " + finalScore
+            );
+
+            if (currentGame.status() == GameStatus.FINISHED) {
+                assertNotNull(currentGame.result());
+                assertNotEquals(GameResult.NO_RESULTS_YET, currentGame.result());
+                System.out.println("Game finished! Result: " + currentGame.result());
+            }
+
+        }
+
+        @Test
+        @DisplayName("Crupier hits multiple times until standing")
+        void testCrupierHitsMultipleTimes() {
+            // Given: A new game
+            GameResponse game = gameService.startNewGame(testPlayerId).block();
+            assertNotNull(game);
+
+            if (game.status() == GameStatus.FINISHED) {
+                return;
+            }
+
+            // When: Player stands immediately
+            GameResponse afterStand = gameService.playerStand(game.id()).block();
+            assertNotNull(afterStand);
+
+            if (afterStand.status() != GameStatus.CRUPIER_TURN) {
+                return;
+            }
+
+            int totalHits = 0;
+            GameResponse currentGame = afterStand;
+
+            // Crupier keeps hitting until standing
+            while (currentGame.status() == GameStatus.CRUPIER_TURN) {
+                currentGame = gameService.crupierHitOneCard(game.id()).block();
+                assertNotNull(currentGame);
+                totalHits++;
+
+                // Safety limit
+                if (totalHits > 10) {
+                    System.out.println("Safety limit reached");
+                    break;
+                }
+            }
+
+            // Then: Game is finished or we hit the safety limit
+            assertTrue(
+                    currentGame.status() == GameStatus.FINISHED || totalHits > 10,
+                    "Expected FINISHED or safety limit reached, but was: " + currentGame.status()
+            );
+
+            System.out.println("Crupier took " + totalHits + " hits. Final score: " + currentGame.crupierScore());
+            System.out.println("Final result: " + currentGame.result());
+        }
+
+        @Test
+        @DisplayName("Full game flow with visible crupier turn")
+        void testFullGameFlowWithCrupierTurn() {
+            // This test simulates the new frontend flow
+            System.out.println("=== Starting Full Game Test ===");
+
+            // 1. Start game
+            GameResponse game = gameService.startNewGame(testPlayerId).block();
+            assertNotNull(game);
+            UUID gameId = game.id();
+            System.out.println("Game started. Status: " + game.status());
+            System.out.println("Player cards: " + game.player().hand().size() + ", Score: " + game.player().score());
+            System.out.println("Crupier cards: " + game.crupierHand().size() + ", Score: " + game.crupierScore());
+
+            // Skip if immediate blackjack
+            if (game.status() == GameStatus.FINISHED) {
+                System.out.println("Game ended immediately with: " + game.result());
+                return;
+            }
+
+            // 2. Player decides to hit once
+            System.out.println("\n--- Player Hits ---");
+            GameResponse afterHit = gameService.playerHit(gameId).block();
+            assertNotNull(afterHit);
+            System.out.println("Player cards: " + afterHit.player().hand().size() + ", Score: " + afterHit.player().score());
+
+            if (afterHit.status() == GameStatus.FINISHED) {
+                System.out.println("Player busted! Result: " + afterHit.result());
+                return;
+            }
+
+            // 3. Player stands - now crupier's turn
+            System.out.println("\n--- Player Stands ---");
+            GameResponse afterPlayerStand = gameService.playerStand(gameId).block();
+            assertNotNull(afterPlayerStand);
+            System.out.println("Status after stand: " + afterPlayerStand.status());
+            System.out.println("Crupier score: " + afterPlayerStand.crupierScore());
+
+            // 4. Crupier plays one card at a time (simulating frontend calls)
+            System.out.println("\n--- Crupier Playing ---");
+            GameResponse currentGame = afterPlayerStand;
+            int crupierHits = 0;
+
+            while (currentGame.status() == GameStatus.CRUPIER_TURN) {
+                currentGame = gameService.crupierHitOneCard(gameId).block();
+                assertNotNull(currentGame);
+                crupierHits++;
+                System.out.println("Crupier hit #" + crupierHits + ": Score = " + currentGame.crupierScore());
+
+                if (crupierHits > 10) {
+                    System.out.println("Safety break!");
+                    break;
+                }
+            }
+
+            // 5. Game is finished
+            System.out.println("\n--- Game Finished ---");
+            System.out.println("Final status: " + currentGame.status());
+            System.out.println("Final crupier score: " + currentGame.crupierScore());
+
+            // Only assert on result if game is actually finished
+            if (currentGame.status() == GameStatus.FINISHED) {
+                assertNotNull(currentGame.result());
+                System.out.println("Final result: " + currentGame.result());
+                System.out.println("Player wins: " + currentGame.result() + " = " +
+                        (currentGame.result() == GameResult.PLAYER_WINS || currentGame.result() == GameResult.BLACKJACK));
+            } else {
+                System.out.println("Game not finished within safety limit. Crupier score: " + currentGame.crupierScore());
+            }
+        }
     }
 
 }

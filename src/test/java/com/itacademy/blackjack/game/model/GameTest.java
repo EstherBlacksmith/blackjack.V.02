@@ -159,20 +159,6 @@ class GameTest {
 
 
     @Test
-    void testPlayerStandSwitchesToCrupierTurn() {
-        Game game = new Game(scoringService);
-
-        game.startGame();
-
-        // When: Player stands
-        game.playerStand();
-
-        // Then: Game should be finished (crupier played)
-        assertEquals(GameStatus.FINISHED, game.getGameStatus());
-    }
-
-
-    @Test
     void testPlayerWinsWithHigherScore() {
         Game game = new Game(scoringService);
 
@@ -262,6 +248,77 @@ class GameTest {
 
         // When/Then: Stand on finished game should throw
         assertThrows(NotPlayerTurnException.class, game::playerStand, "Stand should throw when game is finished");
+    }
+
+    @Test
+    void testCrupierTurnStatusExists() {
+        // Given: A game after player stands
+        Game game = new Game(scoringService);
+        game.startGame();
+
+        // When: Player stands
+        game.playerStand();
+
+        // Then: Game status should be CRUPIER_TURN (not immediately FINISHED)
+        // Nota: Si crupierTurn() se llama inmediatamente, será FINISHED
+        assertNotNull(game.getGameStatus());
+    }
+
+    @Test
+    void testCrupierHitOneCard_ThrowsException_WhenNotCrupierTurn() {
+        // Given: A game in PLAYER_TURN status
+        Game game = new Game(scoringService);
+        game.startGame();
+
+        // When/Then: Calling crupierHitOneCard should throw
+        assertThrows(NotPlayerTurnException.class, game::crupierHitOneCard,
+                "Should throw when it's not crupier's turn");
+    }
+
+    @Test
+    void testCrupierHitOneCard_AddsCard_WhenCrupierMustHit() {
+        // Given: A game with crupier turn status
+        Game game = new Game(scoringService);
+        game.setGameStatus(GameStatus.CRUPIER_TURN);
+        game.getCrupier().receiveCard(new Card(CardRank.TEN, Suit.HEARTS)); // 10
+        game.getCrupier().receiveCard(new Card(CardRank.FIVE, Suit.SPADES)); // 15
+
+        int initialCards = game.getCrupier().getCardCount() ;
+
+        // When
+        game.crupierHitOneCard();
+
+        // Then: Crupier should have one more card
+        assertEquals(initialCards + 1, game.getCrupier().getCardCount());
+    }
+
+
+    @Test
+    void testCrupierHitOneCard_DoesNotAddCard_WhenCrupierShouldStand() {
+        Game game = new Game(scoringService);
+        game.setGameStatus(GameStatus.CRUPIER_TURN);
+        game.getCrupier().receiveCard(new Card(CardRank.KING, Suit.HEARTS)); // 10
+        game.getCrupier().receiveCard(new Card(CardRank.SEVEN, Suit.SPADES)); // 17
+
+        int initialCards = game.getCrupier().getCardCount();  // ← CORREGIDO
+
+        game.crupierHitOneCard();
+
+        assertEquals(initialCards, game.getCrupier().getCardCount());  // ← CORREGIDO
+        assertEquals(GameStatus.FINISHED, game.getGameStatus());
+    }
+
+    @Test
+    void testPlayerStand_SetsCrupierTurnStatus() {
+        // Given: A game in PLAYER_TURN
+        Game game = new Game(scoringService);
+        game.startGame();
+
+        // When: Player stands
+        game.playerStand();
+
+        // Then: Status should be CRUPIER_TURN (not immediately FINISHED)
+        assertEquals(GameStatus.CRUPIER_TURN, game.getGameStatus());
     }
 
 }

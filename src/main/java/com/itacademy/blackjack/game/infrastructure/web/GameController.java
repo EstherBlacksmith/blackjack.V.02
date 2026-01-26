@@ -48,12 +48,11 @@ public class GameController {
         return gameService.playerStand(id);
     }
 
-/*    @PostMapping("{id}/play")
+    @PostMapping("/{gameId}/crupier-hit")
     @ResponseStatus(HttpStatus.OK)
-    public Mono<Game> makeMove( @PathVariable UUID id, @Valid @RequestBody MoveRequest moveRequest) throws MissingIdentifierException {
-
-        return bettingService.makeMove(id, moveRequest);
-    }*/
+    public Mono<GameResponse> crupierHit(@PathVariable UUID gameId) {
+        return gameService.crupierHitOneCard(gameId);
+    }
 
     @DeleteMapping("{id}/delete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
