@@ -53,4 +53,7 @@ public class PlayerService {
                 });
     }
 
+    public Mono<Void> deleteById(UUID playerId) {
+        return playerRepository.deleteById(playerId);
+    }
 }
