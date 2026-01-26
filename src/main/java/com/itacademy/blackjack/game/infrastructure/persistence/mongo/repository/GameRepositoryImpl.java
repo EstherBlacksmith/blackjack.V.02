@@ -5,6 +5,7 @@ import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.Ga
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.mapper.GameMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -33,4 +34,12 @@ public class GameRepositoryImpl implements GameRepository {
     public Mono<Void> deleteById(UUID id) {
         return mongoRepository.deleteById(id.toString());
     }
+
+    @Override
+    public Flux<Game> findByPlayerId(UUID playerId) {
+        return mongoRepository.findByPlayerId(playerId.toString())
+                .map(mapper::toDomain);
+    }
+
+
 }

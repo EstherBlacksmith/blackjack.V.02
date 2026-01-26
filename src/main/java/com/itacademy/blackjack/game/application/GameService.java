@@ -95,6 +95,7 @@ public class GameService {
     }
 
     public Mono<GameResponse> playerHit(UUID gameId) {
+        System.out.println("[DEBUG] GameService.playerHit called for gameId: " + gameId);
         return gameRepository.findById(gameId)
                 .switchIfEmpty(Mono.error(
                         new ResourceNotFoundException("Game not found with id: " + gameId)))
@@ -102,8 +103,10 @@ public class GameService {
                     game.playerHit();
                     return gameRepository.save(game)
                             .flatMap(savedGame -> {
+                                System.out.println("[DEBUG] After playerHit, gameResult: " + savedGame.getGameResult());
                                 if (savedGame.getGameResult() != null &&
                                         savedGame.getGameResult() != GameResult.NO_RESULTS_YET) {
+                                    System.out.println("[DEBUG] Player busted or blackjack, updating player stats...");
                                     return playerService.updatePlayerStats(
                                             savedGame.getPlayer().getId(),
                                             savedGame.getGameResult()
@@ -122,25 +125,33 @@ public class GameService {
                         new ResourceNotFoundException("Game not found with id: " + gameId)))
                 .flatMap(game -> {
                     game.playerStand();
-                    return gameRepository.save(game)
-                            .flatMap(savedGame -> {
-                                // Update player stats
-                                return playerService.updatePlayerStats(
-                                        savedGame.getPlayer().getId(),
-                                        savedGame.getGameResult()
-                                ).thenReturn(savedGame);
-                            });
+                    return gameRepository.save(game);
                 })
                 .map(this::mapToResponse);
     }
 
     public Mono<GameResponse> crupierHitOneCard(UUID gameId) {
+        System.out.println("[DEBUG] GameService.crupierHitOneCard called for gameId: " + gameId);
         return gameRepository.findById(gameId)
                 .switchIfEmpty(Mono.error(
                         new ResourceNotFoundException("Game not found with id: " + gameId)))
                 .flatMap(game -> {
                     game.crupierHitOneCard();
-                    return gameRepository.save(game);
+                    return gameRepository.save(game)
+                            .flatMap(savedGame -> {
+                                // If the game is finished, update player stats
+                                System.out.println("[DEBUG] Checking if game finished: gameResult=" + savedGame.getGameResult());
+                                if (savedGame.getGameResult() != null &&
+                                        savedGame.getGameResult() != GameResult.NO_RESULTS_YET) {
+                                    System.out.println("[DEBUG] Game finished, updating player stats...");
+                                    return playerService.updatePlayerStats(
+                                            savedGame.getPlayer().getId(),
+                                            savedGame.getGameResult()
+                                    ).thenReturn(savedGame);
+                                }
+                                System.out.println("[DEBUG] Game not finished yet, result: " + savedGame.getGameResult());
+                                return Mono.just(savedGame);
+                            });
                 })
                 .map(this::mapToResponse);
     }
