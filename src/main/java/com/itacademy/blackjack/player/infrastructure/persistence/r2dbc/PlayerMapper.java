@@ -30,6 +30,7 @@ public class PlayerMapper {
                 entity.pushes()
         );
     }
+
     public Player fromRow(Row row) {
         return Player.fromDatabase(
                 UUID.fromString(row.get("id", String.class)),

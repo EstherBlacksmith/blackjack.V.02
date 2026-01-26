@@ -2,15 +2,15 @@ package com.itacademy.blackjack.player.infrastructure.persistence.r2dbc;
 
 
 import com.itacademy.blackjack.player.domain.model.Player;
-import io.r2dbc.spi.Readable;
 import com.itacademy.blackjack.player.domain.repository.PlayerRepository;
+import io.r2dbc.spi.Readable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import java.util.UUID;
+import static com.itacademy.blackjack.player.infrastructure.persistence.r2dbc.PlayerSqlConstants.*;
 
 @Slf4j
 @Repository
@@ -26,11 +26,7 @@ public class PlayerRepositoryImpl implements PlayerRepository {
 
     public Mono<Player> save(Player player) {
         PlayerEntity entity = mapper.toEntity(player);
-        return client.sql(
-                        "INSERT INTO players (id, name, wins, losses, pushes) VALUES (?, ?, ?, ?, ?) " +
-                                "ON DUPLICATE KEY UPDATE name = VALUES(name), wins = VALUES(wins), " +
-                                "losses = VALUES(losses), pushes = VALUES(pushes)"
-                )
+        return client.sql(INSERT_PLAYER)
                 .bind(0, entity.id())
                 .bind(1, entity.name())
                 .bind(2, entity.wins())
@@ -43,14 +39,14 @@ public class PlayerRepositoryImpl implements PlayerRepository {
 
     @Override
     public Mono<Void> deleteById(UUID id) {
-        return client.sql("DELETE FROM players WHERE id = ?")
+        return client.sql(DELETE_PLAYER_BY_ID)
                 .bind(0, id.toString())
                 .then();
     }
 
     @Override
     public Mono<Player> findById(UUID playerId) {
-        return client.sql("SELECT * FROM players WHERE id = ?")
+        return client.sql(SELECT_PLAYER_BY_ID)
                 .bind(0, playerId.toString())
                 .map((io.r2dbc.spi.Readable row) -> mapRowToPlayer(row))
                 .first();
@@ -58,7 +54,7 @@ public class PlayerRepositoryImpl implements PlayerRepository {
 
     @Override
     public Mono<Player> findByName(String name) {
-        return client.sql("SELECT * FROM players WHERE name = ?")
+        return client.sql(SELECT_PLAYER_BY_NAME)
                 .bind(0, name)
                 .map((io.r2dbc.spi.Readable row) -> mapRowToPlayer(row))
                 .first();
@@ -78,9 +74,8 @@ public class PlayerRepositoryImpl implements PlayerRepository {
     public Mono<Player> updateStats(UUID playerId, int wins, int losses, int pushes) {
         log.debug("updateStats called for playerId: {}, wins: {}, losses: {}, pushes: {}",
                 playerId, wins, losses, pushes);
-        return client.sql(
-                        "UPDATE players SET wins = ?, losses = ?, pushes = ? WHERE id = ?"
-                )
+
+        return client.sql(UPDATE_PLAYER_STATS)
                 .bind(0, wins)
                 .bind(1, losses)
                 .bind(2, pushes)
@@ -94,13 +89,8 @@ public class PlayerRepositoryImpl implements PlayerRepository {
 
     @Override
     public Flux<Player> findAllByOrderByWinsDesc() {
-        return client.sql(
-                        "SELECT name , MAX(id) as id, MAX(name) as name, " +
-                                "COALESCE(SUM(wins), 0) as wins, COALESCE(SUM(losses), 0) as losses, COALESCE(SUM(pushes), 0) as pushes " +
-                                "FROM players " +
-                                "GROUP BY name " +
-                                "ORDER BY wins DESC"
-                )
+
+        return client.sql(SELECT_ALL_PLAYERS_RANKING)
                 .map((io.r2dbc.spi.Readable row) -> {
                     String idStr = row.get("id", String.class);
                     String name = row.get("name", String.class);
