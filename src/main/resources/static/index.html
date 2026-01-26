@@ -366,6 +366,7 @@
                         <th>Your Score</th>
                         <th>Dealer Score</th>
                         <th>Date</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="historyList">
@@ -567,7 +568,7 @@
             console.log("Updating history table with:", recentGames);
             
             if (!recentGames || recentGames.length === 0) {
-                historyList.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">No games yet 🐱</td></tr>';
+                historyList.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">No games yet 🐱</td></tr>';
                 return;
             }
             
@@ -601,10 +602,32 @@
                     '<td>' + game.playerScore + '</td>' +
                     '<td>' + game.dealerScore + '</td>' +
                     '<td>' + dateStr + '</td>' +
+                    '<td><button onclick="deleteGameFromHistory(\'' + game.gameId + '\')" style="padding: 4px 8px; font-size: 12px;">🗑️</button></td>' +
                     '</tr>';
             }).join("");
             
             historyList.innerHTML = historyHtml;
+        }
+        
+        async function deleteGameFromHistory(gameId) {
+            if (!confirm("Are you sure you want to delete this game?")) return;
+            
+            try {
+                const response = await fetch("/games/" + gameId + "/delete", { 
+                    method: "DELETE" 
+                });
+                
+                if (response.ok) {
+                    console.log("Game deleted successfully");
+                    // Refresh stats and history
+                    loadPlayerStats();
+                } else {
+                    alert("Error deleting game");
+                }
+            } catch (error) {
+                console.error("Delete error:", error);
+                alert("Error deleting game: " + error.message);
+            }
         }
         
         async function startGame() {
