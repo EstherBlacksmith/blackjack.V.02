@@ -7,6 +7,7 @@ import com.itacademy.blackjack.player.application.dto.PlayerStatsResponse;
 import com.itacademy.blackjack.player.domain.model.Player;
 import com.itacademy.blackjack.player.domain.repository.PlayerRepository;
 import com.itacademy.blackjack.player.infrastructure.persistence.r2dbc.PlayerMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -18,6 +19,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
+
+@Slf4j
 @Service
 public class PlayerService {
 
@@ -36,6 +39,7 @@ public class PlayerService {
     }
 
     public Mono<Player> findOrCreatePlayer(String name) {
+        log.debug("findOrCreatePlayer called with name: {}", name);
         return playerRepository.findByName(name)
                 .switchIfEmpty(
                         Mono.defer(() -> createPlayer(name))
@@ -44,19 +48,23 @@ public class PlayerService {
 
 
     public Mono<Player> createPlayer(String name) {
+        log.info("Creating new player with name: {}", name);
         Player player = Player.createNew(name, scoringService);
         return playerRepository.save(player);
     }
 
     public Mono<Player> findById(UUID playerId) {
+        log.debug("findById called for playerId: {}", playerId);
         return playerRepository.findById(playerId);
     }
 
     public Mono<Player> findByName(String name) {
+        log.debug("findByName called for name: {}", name);
         return playerRepository.findByName(name);
     }
 
     public Mono<Player> updatePlayerStats(UUID playerId, GameResult result) {
+        log.debug("updatePlayerStats called for playerId: {}, result: {}", playerId, result);
         return playerRepository.findById(playerId)
                 .flatMap(player -> {
                     player.applyGameResult(result);
@@ -65,10 +73,12 @@ public class PlayerService {
     }
 
     public Mono<Void> deleteById(UUID playerId) {
+        log.info("Deleting player with id: {}", playerId);
         return playerRepository.deleteById(playerId);
     }
 
     public Flux<GameHistoryResponse> getPlayerGameHistory(UUID playerId) {
+        log.debug("getPlayerGameHistory called for playerId: {}", playerId);
         return gameRepository.findDocumentsByPlayerId(playerId)
                 .filter(game -> game.getGameResult() != null &&
                         game.getGameResult() != GameResult.NO_RESULTS_YET)
@@ -95,6 +105,7 @@ public class PlayerService {
     }
 
     public Mono<PlayerStatsResponse> getPlayerStats(UUID playerId) {
+        log.debug("getPlayerStats called for playerId: {}", playerId);
         return findById(playerId)
                 .zipWith(getPlayerGameHistory(playerId).collectList())
                 .map(tuple -> {
@@ -114,10 +125,13 @@ public class PlayerService {
     }
 
     public Mono<Void> updateStatsOnly(UUID playerId, int wins, int losses, int pushes) {
+        log.debug("updateStatsOnly called for playerId: {}, wins: {}, losses: {}, pushes: {}",
+                playerId, wins, losses, pushes);
         return playerRepository.updateStats(playerId, wins, losses, pushes).then();
     }
 
     public Flux<PlayerRankingResponse> getPlayerRanking() {
+        log.debug("getPlayerRanking called");
         return playerRepository.findAllByOrderByWinsDesc()
                 .index() // Returns Tuple2<Long, Player> where T1 is index
                 .map(tuple -> {
