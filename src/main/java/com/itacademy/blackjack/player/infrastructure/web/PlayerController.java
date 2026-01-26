@@ -3,12 +3,15 @@ package com.itacademy.blackjack.player.infrastructure.web;
 import com.itacademy.blackjack.player.application.PlayerService;
 import com.itacademy.blackjack.player.application.dto.CreatePlayerRequest;
 import com.itacademy.blackjack.player.application.dto.PlayerProfileResponse;
+import com.itacademy.blackjack.player.application.dto.PlayerStatsResponse;
 import com.itacademy.blackjack.player.domain.model.Player;
 import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import com.itacademy.blackjack.game.application.dto.GameHistoryResponse;
 
 import java.util.UUID;
 
@@ -54,4 +57,10 @@ public class PlayerController {
                 player.getPushes()
         );
     }
+
+    @GetMapping("/{playerId}/stats")
+    public Mono<PlayerStatsResponse> getPlayerStats(@PathVariable UUID playerId) {
+        return playerService.getPlayerStats(playerId);
+    }
+
 }

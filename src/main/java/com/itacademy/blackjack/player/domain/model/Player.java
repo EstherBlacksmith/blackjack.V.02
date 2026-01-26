@@ -140,4 +140,8 @@ public class Player {
         }
     }
 
+    public PlayerStats getStats() {
+        return new PlayerStats(wins, losses, pushes);
+    }
+
 }
