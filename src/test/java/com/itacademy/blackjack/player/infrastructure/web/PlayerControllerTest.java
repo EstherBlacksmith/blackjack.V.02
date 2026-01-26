@@ -1,6 +1,5 @@
 package com.itacademy.blackjack.player.infrastructure.web;
 
-import com.itacademy.blackjack.config.TestMongoConfig;
 import com.itacademy.blackjack.config.TestcontainersInitializer;
 import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.game.application.GameService;
@@ -62,7 +61,7 @@ class PlayerControllerTest {
         when(playerService.createPlayer(any(String.class))).thenReturn(Mono.just(testPlayer));
 
         webTestClient.post()
-                .uri("/players")
+                .uri("/players/new")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{\"name\": \"TestPlayer\"}")
                 .exchange()
@@ -112,14 +111,14 @@ class PlayerControllerTest {
                 .thenReturn(Mono.error(new RuntimeException("Database error")));
 
         webTestClient.post()
-                .uri("/players")
+                .uri("/players/new")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{\"name\": \"TestPlayer\"}")
                 .exchange()
                 .expectStatus().is5xxServerError();
     }
 
-    @Import({TestcontainersInitializer.class, TestMongoConfig.class})
+    @Import(TestcontainersInitializer.class)
     @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
     static
     class PlayerControllerIntegrationTest {
@@ -189,7 +188,7 @@ class PlayerControllerTest {
             String newPlayerName = "NewControllerPlayer";
 
             webTestClient.post()
-                    .uri("/players")
+                    .uri("/players/new")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue("{\"name\": \"" + newPlayerName + "\"}")
                     .exchange()

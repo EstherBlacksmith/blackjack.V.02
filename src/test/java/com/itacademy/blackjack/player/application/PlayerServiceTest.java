@@ -13,6 +13,8 @@ import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
+
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
@@ -108,6 +110,9 @@ class PlayerServiceTest {
 
         when(playerRepository.findById(playerId)).thenReturn(Mono.just(player));
 
+        // Mock game repository to return empty history
+        when(gameRepository.findDocumentsByPlayerId(any(UUID.class))).thenReturn(Flux.empty());
+
         // When & Then
         StepVerifier.create(playerService.getPlayerStats(playerId))
                 .expectNextMatches(stats ->
@@ -126,9 +131,23 @@ class PlayerServiceTest {
         UUID playerId = UUID.randomUUID();
         when(playerRepository.findById(playerId)).thenReturn(Mono.empty());
 
+        // Mock game repository to return empty flux
+        when(gameRepository.findDocumentsByPlayerId(any(UUID.class))).thenReturn(Flux.empty());
+
         // When & Then - PlayerService returns empty Mono, but getPlayerStats doesn't handle empty
         // So we need to check what happens when getPlayerStats returns empty
         StepVerifier.create(playerService.getPlayerStats(playerId))
                 .expectComplete(); // Returns empty Mono, completes without error
     }
+    @Test
+    void testUpdateStatsOnly_Success() {
+        UUID playerId = UUID.randomUUID();
+        when(playerRepository.updateStats(playerId, 3, 1, 1)).thenReturn(
+                Mono.just(Player.fromDatabase(playerId, "Test", 3, 1, 1))
+        );
+
+        StepVerifier.create(playerService.updateStatsOnly(playerId, 3, 1, 1))
+                .verifyComplete();
+    }
+
 }

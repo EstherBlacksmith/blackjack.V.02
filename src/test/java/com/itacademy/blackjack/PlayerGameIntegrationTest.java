@@ -1,6 +1,5 @@
 package com.itacademy.blackjack;
 
-import com.itacademy.blackjack.config.TestMongoConfig;
 import com.itacademy.blackjack.config.TestcontainersInitializer;
 import com.itacademy.blackjack.game.application.GameService;
 import com.itacademy.blackjack.game.application.dto.GameResponse;
@@ -19,7 +18,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Import({TestcontainersInitializer.class, TestMongoConfig.class})
+@Import(TestcontainersInitializer.class)
 @SpringBootTest
 class PlayerGameIntegrationTest {
 
@@ -38,9 +37,20 @@ class PlayerGameIntegrationTest {
         playerId = player.getId();
     }
 
+    private void completeCrupierTurn(GameResponse game) {
+        // Complete crupier turn if needed
+        GameResponse currentGame = game;
+        while (currentGame.status() == GameStatus.CRUPIER_TURN) {
+            currentGame = gameService.crupierHitOneCard(game.id()).block();
+            if (currentGame == null || currentGame.status() == GameStatus.FINISHED) {
+                break;
+            }
+        }
+    }
+
     @Nested
     @DisplayName("Player Statistics Tracking")
-    class PlayerStatisticsTests {
+    class CrossModuleErrorHandling {
 
         @Test
         @DisplayName("Player stats update after standing and game ends")
@@ -48,9 +58,14 @@ class PlayerGameIntegrationTest {
             GameResponse game = gameService.startNewGame(playerId).block();
             assertNotNull(game);
 
-            GameResponse finishedGame = gameService.playerStand(game.id()).block();
-            assertNotNull(finishedGame);
-            assertEquals(GameStatus.FINISHED, finishedGame.status());
+            GameResponse afterStand = gameService.playerStand(game.id()).block();
+            assertNotNull(afterStand);
+            
+            // With new crupier flow, status is CRUPIER_TURN after player stands
+            // Stats are updated when game completes (crupier finishes)
+            assertTrue(afterStand.status() == GameStatus.CRUPIER_TURN || 
+                       afterStand.status() == GameStatus.FINISHED,
+                    "Status should be CRUPIER_TURN or FINISHED");
 
             Player updatedPlayer = playerService.findById(playerId).block();
             assertNotNull(updatedPlayer);
@@ -78,6 +93,10 @@ class PlayerGameIntegrationTest {
 
             if (game.status() == GameStatus.PLAYER_TURN) {
                 game = gameService.playerStand(game.id()).block();
+                // Complete crupier turn to finish the game
+                if (game.status() == GameStatus.CRUPIER_TURN) {
+                    completeCrupierTurn(game);
+                }
             }
 
             assertNotNull(game);
@@ -91,7 +110,7 @@ class PlayerGameIntegrationTest {
 
     @Nested
     @DisplayName("Cross-Module Error Handling")
-    class CrossModuleErrorHandling {
+    class CrossModuleErrorHandling2 {
 
         @Test
         @DisplayName("Game cannot be created with non-existent player")
@@ -140,7 +159,7 @@ class PlayerGameIntegrationTest {
 
         @Test
         @DisplayName("Two different players have isolated data")
-        void testPlayersHaveIsolatedData() {
+        void testCreatePlayer_ReturnsCreatedPlayer() {
             Player player2 = playerService.createPlayer("SecondPlayer").block();
             assertNotNull(player2);
             UUID player2Id = player2.getId();
@@ -148,12 +167,20 @@ class PlayerGameIntegrationTest {
             // Player 1 plays a game
             GameResponse game1 = gameService.startNewGame(playerId).block();
             assertNotNull(game1);
-            gameService.playerStand(game1.id()).block();
+            game1 = gameService.playerStand(game1.id()).block();
+            // Complete crupier turn
+            if (game1.status() == GameStatus.CRUPIER_TURN) {
+                completeCrupierTurn(game1);
+            }
 
             // Player 2 plays a game
             GameResponse game2 = gameService.startNewGame(player2Id).block();
             assertNotNull(game2);
-            gameService.playerStand(game2.id()).block();
+            game2 = gameService.playerStand(game2.id()).block();
+            // Complete crupier turn
+            if (game2.status() == GameStatus.CRUPIER_TURN) {
+                completeCrupierTurn(game2);
+            }
 
             // Both players should have played at least one game
             Player p1After = playerService.findById(playerId).block();

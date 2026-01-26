@@ -113,5 +113,7 @@ public class PlayerService {
                 });
     }
 
-
+    public Mono<Void> updateStatsOnly(UUID playerId, int wins, int losses, int pushes) {
+        return playerRepository.updateStats(playerId, wins, losses, pushes).then();
+    }
 }
