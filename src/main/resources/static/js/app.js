@@ -56,14 +56,20 @@ function setupButtonListeners() {
     }
 }
 
-function setupModalCloseListeners() {
-    document.addEventListener('click', function(event) {
-        const modal = document.getElementById("rankingModal");
-        if (event.target === modal) {
-            closeRanking();
-        }
-    });
-}
+ function setupModalCloseListeners() {
+     document.addEventListener('click', function(event) {
+         const rankingModal = document.getElementById("rankingModal");
+         const gameDetailsModal = document.getElementById("gameDetailsModal");
+
+         if (event.target === rankingModal) {
+             closeRanking();
+         }
+         if (event.target === gameDetailsModal) {
+             closeGameDetails();
+         }
+     });
+ }
+
 
 // ==================== Game Actions ====================
 
@@ -227,8 +233,12 @@ function updateHistoryTable(recentGames) {
             '<td>' + game.playerScore + '</td>' +
             '<td>' + game.dealerScore + '</td>' +
             '<td>' + dateStr + '</td>' +
-            '<td><button onclick="deleteGameFromHistory(\'' + game.gameId + '\')" ' +
-                'style="padding: 4px 8px; font-size: 12px;">🗑️</button></td>' +
+            '<td>' +
+                '<button onclick="viewGameDetails(\'' + game.gameId + '\')" ' +
+                    'style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">👁️</button>' +
+                '<button onclick="deleteGameFromHistory(\'' + game.gameId + '\')" ' +
+                    'style="padding: 4px 8px; font-size: 12px;">🗑️</button>' +
+            '</td>' +
             '</tr>';
     }).join("");
     
@@ -535,7 +545,75 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-}
+}// ==================== Game Details Feature ====================
+
+ async function viewGameDetails(gameId) {
+     const modal = document.getElementById("gameDetailsModal");
+     const content = document.getElementById("gameDetailsContent");
+
+     content.innerHTML = '<p>Loading game details... 🐱</p>';
+     modal.classList.add("show");
+
+     try {
+         const response = await fetch("/games/" + gameId);
+
+         if (response.ok) {
+             const game = await response.json();
+             displayGameDetails(game);
+         } else if (response.status === 404) {
+             content.innerHTML = '<p style="color: #ff9a9e;">Game not found 😔</p>';
+         } else {
+             content.innerHTML = '<p style="color: #ff9a9e;">Error loading game details</p>';
+         }
+     } catch (error) {
+         console.error("Error loading game details:", error);
+         content.innerHTML = '<p style="color: #ff9a9e;">Connection error</p>';
+     }
+ }
+
+ function displayGameDetails(game) {
+     const content = document.getElementById("gameDetailsContent");
+
+     // Format result
+     let resultText = game.result || "N/A";
+     if (game.result === "PLAYER_WINS") resultText = "WIN 🏆";
+     else if (game.result === "CRUPIER_WINS") resultText = "LOSE ❌";
+     else if (game.result === "PUSH") resultText = "PUSH 🤝";
+     else if (game.result === "BLACKJACK") resultText = "BLACKJACK! ✨";
+
+     // Create player cards HTML
+     const playerCardsHtml = game.player.hand.map(function(card) {
+         return createCardElement(card);
+     }).join("");
+
+     // Create dealer cards HTML
+     const dealerCardsHtml = game.crupierHand.map(function(card) {
+         return createCardElement(card);
+     }).join("");
+
+     content.innerHTML =
+         '<div class="game-details-info">' +
+         '<p><strong>Game ID:</strong> ' + game.id.substring(0, 8) + '...</p>' +
+         '<p><strong>Status:</strong> ' + game.status + '</p>' +
+         '<p><strong>Result:</strong> ' + resultText + '</p>' +
+         '</div>' +
+         '<div class="game-details-hands">' +
+         '<div class="hand-section">' +
+         '<h4>🃏 Your Hand (Score: ' + game.player.score + ')</h4>' +
+         '<div class="cards-container small-cards">' + playerCardsHtml + '</div>' +
+         '</div>' +
+         '<div class="hand-section">' +
+         '<h4>🎰 Dealer Hand (Score: ' + game.crupierScore + ')</h4>' +
+         '<div class="cards-container small-cards">' + dealerCardsHtml + '</div>' +
+         '</div>' +
+         '</div>';
+ }
+
+ function closeGameDetails() {
+     document.getElementById("gameDetailsModal").classList.remove("show");
+ }
+
+
 
 // Export functions to window for HTML onclick handlers
 window.hit = async function() { return window.hitFunction(); };
