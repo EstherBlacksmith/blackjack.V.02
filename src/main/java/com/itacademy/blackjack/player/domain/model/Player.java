@@ -1,5 +1,6 @@
 package com.itacademy.blackjack.player.domain.model;
 
+import com.itacademy.blackjack.deck.infrastructure.CardMapper;
 import com.itacademy.blackjack.deck.model.Card;
 import com.itacademy.blackjack.deck.model.CardRank;
 import com.itacademy.blackjack.deck.model.ScoringService;
@@ -48,7 +49,6 @@ public class Player {
 
     //  CUSTOM BUILDER
     public static class Builder {
-        // Required fields
         private UUID id;
         private String name;
         private int wins;
@@ -148,10 +148,7 @@ public class Player {
         if (cards != null && !cards.isEmpty()) {
             Hand hand = new Hand(new ScoringService());
             for (CardData cardDoc : cards) {
-                Card card = new Card(
-                        CardRank.valueOf(cardDoc.rank()),
-                        Suit.valueOf(cardDoc.suit())
-                );
+                Card card = CardMapper.toCard(cardDoc);
                 hand.addCard(card);
             }
             builder.hand(hand);
