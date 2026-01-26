@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack - Super Simple</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 30px auto; text-align: center; background-color: #1a5f2a; min-height: 100vh; }
+        h1 { color: #ffd700; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: 2.5em; margin-bottom: 30px; }
+        h3 { color: #fff; }
+        h4 { color: #ffd700; margin-bottom: 15px; }
+        .section { margin: 20px auto; padding: 20px; background: rgba(255,255,255,0.95); border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); max-width: 90%; }
+        button { padding: 12px 24px; margin: 8px; font-size: 16px; cursor: pointer; background-color: #c41e3a; color: white; border: none; border-radius: 8px; transition: all 0.3s; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+        button:hover:not(:disabled) { background-color: #a01830; transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.3); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        input { padding: 12px; font-size: 16px; width: 220px; border: 2px solid #ddd; border-radius: 8px; text-align: center; }
+        input:focus { outline: none; border-color: #c41e3a; }
+        
+        /* Card styles */
+        .cards-container { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 15px 0; min-height: 120px; align-items: center; }
+        .card {
+            width: 80px;
+            height: 115px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            position: relative;
+            transition: transform 0.3s ease;
+            border: 2px solid #ddd;
+        }
+        .card:hover { transform: translateY(-5px); }
+        .card.red { color: #c41e3a; }
+        .card.black { color: #1a1a1a; }
+        .card .corner { position: absolute; font-size: 14px; }
+        .card .corner-top { top: 5px; left: 8px; }
+        .card .corner-bottom { bottom: 5px; right: 8px; transform: rotate(180deg); }
+        .card .center { font-size: 36px; }
+        
+        .score { font-size: 20px; color: #333; font-weight: bold; margin-top: 10px; }
+        .result { font-size: 28px; font-weight: bold; color: #2196F3; margin: 20px 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        .hidden { display: none !important; }
+        .card-back {
+            background: linear-gradient(135deg, #c41e3a 25%, #8b0000 25%, #8b0000 50%, #c41e3a 50%, #c41e3a 75%, #8b0000 75%);
+            background-size: 15px 15px;
+        }
+        .card-back::after { content: ''; }
+        #playerIdDisplay { color: #ffd700; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        #gameIdDisplay { font-weight: bold; color: #c41e3a; }
+        
+        /* Stats styles */
+        .stats-container { display: flex; justify-content: center; gap: 20px; margin: 15px 0; }
+        .stat-box { background: #f5f5f5; padding: 10px 20px; border-radius: 8px; text-align: center; min-width: 80px; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #c41e3a; }
+        .stat-label { font-size: 12px; color: #666; text-transform: uppercase; }
+        .stat-wins .stat-value { color: #2e7d32; }
+        .stat-losses .stat-value { color: #c62828; }
+        .stat-pushes .stat-value { color: #f57c00; }
+    </style>
+</head>
+<body>
+    <h1>Blackjack</h1>
+    <div class="section">
+        <h3>🎮 Login / Registrarse</h3>
+        <input type="text" id="playerName" placeholder="Ingresa tu nombre">
+        <button onclick="loginOrCreate()">Entrar</button>
+        <div id="playerInfo" class="hidden">
+            <p id="playerIdDisplay"></p>
+            <div class="stats-container">
+                <div class="stat-box stat-wins">
+                    <div class="stat-value" id="statWins">0</div>
+                    <div class="stat-label">Victorias</div>
+                </div>
+                <div class="stat-box stat-losses">
+                    <div class="stat-value" id="statLosses">0</div>
+                    <div class="stat-label">Derrotas</div>
+                </div>
+                <div class="stat-box stat-pushes">
+                    <div class="stat-value" id="statPushes">0</div>
+                    <div class="stat-label">Empates</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="section hidden" id="startSection">
+        <h3>🎯 Iniciar Juego</h3>
+        <button onclick="startGame()">Nueva Partida</button>
+    </div>
+    <div class="section hidden" id="gameSection">
+        <h3>🎰 Partida en Curso</h3>
+        <p>ID de Partida: <span id="gameIdDisplay"></span></p>
+        <div class="section">
+            <h4>🃏 Tu Mano</h4>
+            <div class="cards-container" id="playerCards"></div>
+            <div class="score">Puntuación: <span id="playerScore"></span></div>
+        </div>
+        <div class="section">
+            <h4>🎰 Mano del Crupier</h4>
+            <div class="cards-container" id="dealerCards"></div>
+            <div class="score">Puntuación: <span id="dealerScore"></span></div>
+        </div>
+        <div id="resultDisplay"></div>
+        <button onclick="hit()" id="btnHit">🃏 Pedir Carta</button>
+        <button onclick="stand()" id="btnStand">✋ Plantarse</button>
+        <button onclick="newGame()" id="btnNewGame" class="hidden">🔄 Nueva Partida</button>
+        <button onclick="deleteGame()">🗑️ Eliminar</button>
+    </div>
+    <script>
+        console.log("Interfaz Blackjack cargada - " + new Date().toISOString());
+        let currentPlayerId = null;
+        let currentGameId = null;
+        
+        async function loginOrCreate() {
+            const name = document.getElementById("playerName").value;
+            if (!name) return alert("Ingresa tu nombre");
+            
+            // Usar el endpoint /login que busca o crea el jugador
+            const response = await fetch("/players/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: name })
+            });
+            
+            if (response.ok) {
+                const player = await response.json();
+                currentPlayerId = player.id;
+                
+                // Mostrar información del jugador
+                document.getElementById("playerIdDisplay").textContent = "👤 " + player.name + " (ID: " + player.id + ")";
+                
+                // Mostrar estadísticas
+                document.getElementById("statWins").textContent = player.wins;
+                document.getElementById("statLosses").textContent = player.losses;
+                document.getElementById("statPushes").textContent = player.pushes;
+                
+                // Mostrar el div de información del jugador
+                document.getElementById("playerInfo").classList.remove("hidden");
+                document.getElementById("startSection").classList.remove("hidden");
+            }
+        }
+        
+        async function startGame() {
+            if (!currentPlayerId) return alert("Create a player first");
+            const response = await fetch("/games/new", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ playerId: currentPlayerId })
+            });
+            if (response.ok) {
+                const game = await response.json();
+                currentGameId = game.id;
+                document.getElementById("gameIdDisplay").textContent = game.id;
+                document.getElementById("gameSection").classList.remove("hidden");
+                updateGameDisplay(game);
+            }
+        }
+        
+        async function hit() {
+            const response = await fetch("/games/" + currentGameId + "/hit", { method: "POST" });
+            if (response.ok) {
+                const game = await response.json();
+                updateGameDisplay(game);
+            }
+        }
+        
+        async function stand() {
+            const response = await fetch("/games/" + currentGameId + "/stand", { method: "POST" });
+            if (response.ok) {
+                const game = await response.json();
+                updateGameDisplay(game);
+            }
+        }
+        
+        async function newGame() {
+            document.getElementById("btnHit").classList.remove("hidden");
+            document.getElementById("btnStand").classList.remove("hidden");
+            document.getElementById("btnNewGame").classList.add("hidden");
+            document.getElementById("resultDisplay").innerHTML = "";
+            startGame();
+        }
+        
+        async function deleteGame() {
+            if (currentGameId) {
+                await fetch("/games/" + currentGameId + "/delete", { method: "DELETE" });
+                currentGameId = null;
+                document.getElementById("gameSection").classList.add("hidden");
+            }
+        }
+        
+        function createCardElement(card) {
+            const isRed = card.suit === '♥' || card.suit === '♦';
+            const suitSymbol = card.suit;
+            const rankDisplay = card.rank;
+            
+            return '<div class="card ' + (isRed ? 'red' : 'black') + '">' +
+                '<span class="corner corner-top">' + rankDisplay + '</span>' +
+                '<span class="center">' + suitSymbol + '</span>' +
+                '<span class="corner corner-bottom">' + rankDisplay + '</span>' +
+                '</div>';
+        }
+        
+        function updateGameDisplay(game) {
+            console.log("DEBUG updateGameDisplay called, result =", game.result, "playerStatus =", game.player.status);
+            
+            // Clear result display first - only show result when game is actually finished
+            document.getElementById("resultDisplay").innerHTML = "";
+            
+            // Create visual cards for player
+            const playerCardsHtml = game.player.hand.map(function(c) { return createCardElement(c); }).join("");
+            document.getElementById("playerCards").innerHTML = playerCardsHtml;
+            document.getElementById("playerScore").textContent = game.player.score;
+            
+            // Create visual cards for dealer (show face up cards)
+            const dealerCardsHtml = game.crupierHand.map(function(c) { return createCardElement(c); }).join("");
+            document.getElementById("dealerCards").innerHTML = dealerCardsHtml;
+            document.getElementById("dealerScore").textContent = game.crupierScore;
+
+            // Detect the dealer turn
+            if (game.gameStatus === "CRUPIER_TURN" && !window.crupierTurnStarted) {
+                window.crupierTurnStarted = true;
+                setTimeout(crupierPlayStep, 1000);
+            }
+
+            // Get button references
+            const btnHit = document.getElementById("btnHit");
+            const btnStand = document.getElementById("btnStand");
+            const btnNewGame = document.getElementById("btnNewGame");
+            
+            // Show result ONLY for final results, not for NO_RESULTS_YET
+            const isFinalResult = game.result && game.result !== "NO_RESULTS_YET";
+            
+            if (isFinalResult) {
+                console.log("Game finished with result:", game.result);
+                
+                // Map backend result names to display names
+                const resultMap = {
+                    "PLAYER_WINS": "¡GANASTE! 🎉",
+                    "CRUPIER_WINS": "PERDISTE 😔",
+                    "PUSH": "EMPATE 🤝",
+                    "BLACKJACK": "¡BLACKJACK! 🏆"
+                };
+                const displayResult = resultMap[game.result] || game.result;
+                const colors = {
+                    "¡GANASTE! 🎉": "#2e7d32",
+                    "PERDISTE 😔": "#c62828",
+                    "EMPATE 🤝": "#f57c00",
+                    "¡BLACKJACK! 🏆": "#ffd700"
+                };
+                document.getElementById("resultDisplay").innerHTML = "<div class=\"result\" style=\"color: " + colors[displayResult] + "\">" + displayResult + "</div>";
+                
+                // Hide action buttons, show new game button
+                btnHit.classList.add("hidden");
+                btnStand.classList.add("hidden");
+                btnNewGame.classList.remove("hidden");
+                
+                // Disable buttons
+                btnHit.disabled = true;
+                btnStand.disabled = true;
+                console.log("DEBUG: Final result found, hiding Hit/Stand buttons");
+            } else {
+                console.log("DEBUG: Game in progress (no final result), buttons should be visible");
+                
+                // Disable buttons based on player status
+                const playerStatus = game.player.status;
+                const canHit = playerStatus === "ACTIVE";
+                const canStand = playerStatus === "ACTIVE";
+                
+                // Show action buttons, hide new game button
+                btnHit.classList.remove("hidden");
+                btnStand.classList.remove("hidden");
+                btnNewGame.classList.add("hidden");
+                
+                // Apply disabled state
+                btnHit.disabled = !canHit;
+                btnStand.disabled = !canStand;
+            }
+
+            async function crupierPlayStep() {
+                if (!currentGameId) return;
+
+                const response = await fetch("/games/" + currentGameId + "/crupier-hit", {
+                    method: "POST"
+                });
+
+                if (response.ok) {
+                    const game = await response.json();
+                    updateGameDisplay(game);
+
+                    // Si el crupier sigue jugando, continuar después de 1 segundo
+                    if (game.gameStatus === "CRUPIER_TURN") {
+                        setTimeout(crupierPlayStep, 1000);
+                    }
+                }
+            }
+
+        }
+    </script>
+</body>
+</html>
