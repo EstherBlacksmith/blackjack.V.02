@@ -91,8 +91,29 @@ public class PlayerRepositoryImpl implements PlayerRepository {
 
     @Override
     public Flux<Player> findAllByOrderByWinsDesc() {
-        return client.sql("SELECT * FROM players ORDER BY wins DESC")
-                .map(this::mapRowToPlayer)
+        return client.sql(
+                        "SELECT name , MAX(id) as id, MAX(name) as name, " +
+                                "COALESCE(SUM(wins), 0) as wins, COALESCE(SUM(losses), 0) as losses, COALESCE(SUM(pushes), 0) as pushes " +
+                                "FROM players " +
+                                "GROUP BY name " +
+                                "ORDER BY wins DESC"
+                )
+                .map((io.r2dbc.spi.Readable row) -> {
+                    String idStr = row.get("id", String.class);
+                    String name = row.get("name", String.class);
+                    int wins = row.get("wins") != null ? row.get("wins", Integer.class) : 0;
+                    int losses = row.get("losses") != null ? row.get("losses", Integer.class) : 0;
+                    int pushes = row.get("pushes") != null ? row.get("pushes", Integer.class) : 0;
+
+                    UUID id;
+                    if (idStr != null && !idStr.isEmpty()) {
+                        id = UUID.fromString(idStr);
+                    } else {
+                        id = UUID.nameUUIDFromBytes(name.toLowerCase().getBytes());
+                    }
+
+                    return Player.fromDatabase(id, name, wins, losses, pushes);
+                })
                 .all();
     }
 
