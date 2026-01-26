@@ -44,13 +44,13 @@ class PlayerServiceTest {
     @Test
     void testFindOrCreatePlayer_ReturnsExistingPlayer_WhenNameExists() {
         Player existingPlayer = Player.fromDatabase(
-                UUID.randomUUID(), "John", 5, 2, 1
+                UUID.randomUUID(), "Juana", 5, 2, 1
         );
-        when(playerRepository.findByName("John")).thenReturn(Mono.just(existingPlayer));
+        when(playerRepository.findByName("Juana")).thenReturn(Mono.just(existingPlayer));
 
-        StepVerifier.create(playerService.findOrCreatePlayer("John"))
+        StepVerifier.create(playerService.findOrCreatePlayer("Juana"))
                 .expectNextMatches(player ->
-                        player.getName().equals("John") &&
+                        player.getName().equals("Juana") &&
                                 player.getWins() == 5 &&
                                 player.getLosses() == 2 &&
                                 player.getPushes() == 1
@@ -103,7 +103,7 @@ class PlayerServiceTest {
         );
 
         // Mock the getPlayerStats method
-        Player player = Player.fromDatabase(playerId, "John", 5, 2, 1);
+        Player player = Player.fromDatabase(playerId, "Juana", 5, 2, 1);
         when(playerRepository.findById(playerId)).thenReturn(Mono.just(player));
 
         when(playerRepository.findById(playerId)).thenReturn(Mono.just(player));
