@@ -10,8 +10,12 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import com.itacademy.blackjack.game.application.dto.GameHistoryResponse;
+import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository.GameRepository;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 @Service
@@ -65,30 +69,48 @@ public class PlayerService {
     }
 
     public Flux<GameHistoryResponse> getPlayerGameHistory(UUID playerId) {
-        return gameRepository.findByPlayerId(playerId)
+        return gameRepository.findDocumentsByPlayerId(playerId)
                 .filter(game -> game.getGameResult() != null &&
                         game.getGameResult() != GameResult.NO_RESULTS_YET)
-                .map(game -> new GameHistoryResponse(
-                        game.getId().toString(),
-                        "N/A",  // Game domain model has no timestamp
-                        game.getGameResult().name(),
-                        game.getPlayer().getScore(),
-                        game.getCrupier().getScore()
-                ));
+                .map(game -> {
+                    // Format the date from Instant
+                    Instant dateInstant = game.getFinishedAt() != null ? game.getFinishedAt() : game.getCreatedAt();
+                    String dateStr = "N/A";
+                    if (dateInstant != null) {
+                        try {
+                            dateStr = dateInstant.atZone(ZoneId.systemDefault())
+                                    .format(DateTimeFormatter.ofPattern("MMM d, HH:mm"));
+                        } catch (Exception e) {
+                            dateStr = "Recent";
+                        }
+                    }
+                    return new GameHistoryResponse(
+                            game.getId(),
+                            dateStr,
+                            game.getGameResult().name(),
+                            game.getPlayerScore(),
+                            game.getCrupierScore()
+                    );
+                });
     }
 
     public Mono<PlayerStatsResponse> getPlayerStats(UUID playerId) {
         return findById(playerId)
-                .map(Player::getStats)
-                .map(stats -> new PlayerStatsResponse(
-                        stats.totalGames(),
-                        stats.wins(),
-                        stats.losses(),
-                        stats.pushes(),
-                        stats.winRate(),
-                        0, // streak
-                        List.of() // recent games
-                ));
+                .zipWith(getPlayerGameHistory(playerId).collectList())
+                .map(tuple -> {
+                    Player player = tuple.getT1();
+                    List<GameHistoryResponse> recentGames = tuple.getT2();
+                    var stats = player.getStats();
+                    return new PlayerStatsResponse(
+                            stats.totalGames(),
+                            stats.wins(),
+                            stats.losses(),
+                            stats.pushes(),
+                            stats.winRate(),
+                            0, // streak
+                            recentGames
+                    );
+                });
     }
 
 
