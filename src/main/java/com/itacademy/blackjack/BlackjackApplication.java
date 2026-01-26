@@ -12,7 +12,7 @@ public class BlackjackApplication {
     public static void main(String[] args) {
         SpringApplication.run(BlackjackApplication.class, args);
 
-        Deck deck = new Deck();
+     /*   Deck deck = new Deck();
         //	System.out.println(deck.getCardsSnapshot());
         System.out.println(deck.draw());
 
@@ -24,7 +24,7 @@ public class BlackjackApplication {
         System.out.println(game.getCrupier().getHand());
         System.out.println(game.getCrupier().getScore());
         System.out.println(game.getPlayer().getScore());
-        game.determineWinner();
+        game.determineWinner();*/
     }
 
 }

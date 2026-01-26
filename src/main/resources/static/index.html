@@ -61,6 +61,47 @@
         .stat-wins .stat-value { color: #2e7d32; }
         .stat-losses .stat-value { color: #c62828; }
         .stat-pushes .stat-value { color: #f57c00; }
+        
+        /* Dashboard styles */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
+        .dashboard-card {
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .dashboard-card .dashboard-value { font-size: 36px; font-weight: bold; margin-bottom: 5px; }
+        .dashboard-card .dashboard-label { font-size: 14px; opacity: 0.9; }
+        
+        .dashboard-card.total { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .dashboard-card.wins { background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%); }
+        .dashboard-card.losses { background: linear-gradient(135deg, #c62828 0%, #ef5350 100%); }
+        .dashboard-card.pushes { background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%); }
+        
+        .winrate-bar { background: #ddd; border-radius: 10px; height: 20px; margin: 15px 0; overflow: hidden; }
+        .winrate-fill { height: 100%; background: linear-gradient(90deg, #2e7d32, #4caf50); border-radius: 10px; transition: width 0.5s ease; }
+        .winrate-text { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 15px; }
+        
+        .history-list { text-align: left; margin-top: 20px; }
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px;
+            border-left: 4px solid #ddd;
+        }
+        .history-item.win { border-left-color: #2e7d32; }
+        .history-item.loss { border-left-color: #c62828; }
+        .history-item.push { border-left-color: #f57c00; }
+        .history-result { font-weight: bold; }
+        .history-result.win { color: #2e7d32; }
+        .history-result.loss { color: #c62828; }
+        .history-result.push { color: #f57c00; }
+        .history-scores { color: #666; font-size: 14px; }
+        .history-date { color: #999; font-size: 12px; }
+        
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .btn-dashboard { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .btn-dashboard:hover:not(:disabled) { background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%); }
     </style>
 </head>
 <body>
@@ -71,6 +112,7 @@
         <button onclick="loginOrCreate()">Entrar</button>
         <div id="playerInfo" class="hidden">
             <p id="playerIdDisplay"></p>
+            <button onclick="toggleDashboard()" class="btn-dashboard" id="btnDashboard">📊 Ver Dashboard</button>
             <div class="stats-container">
                 <div class="stat-box stat-wins">
                     <div class="stat-value" id="statWins">0</div>
@@ -87,6 +129,41 @@
             </div>
         </div>
     </div>
+    
+    <!-- Dashboard Section -->
+    <div class="section hidden" id="dashboardSection">
+        <div class="dashboard-header">
+            <h3>📊 Tu Dashboard</h3>
+            <button onclick="toggleDashboard()" style="padding: 8px 16px; font-size: 14px;">✕ Cerrar</button>
+        </div>
+        <div class="dashboard-grid">
+            <div class="dashboard-card total">
+                <div class="dashboard-value" id="dashTotalGames">0</div>
+                <div class="dashboard-label">Partidas Totales</div>
+            </div>
+            <div class="dashboard-card wins">
+                <div class="dashboard-value" id="dashWins">0</div>
+                <div class="dashboard-label">Victorias 🏆</div>
+            </div>
+            <div class="dashboard-card losses">
+                <div class="dashboard-value" id="dashLosses">0</div>
+                <div class="dashboard-label">Derrotas ❌</div>
+            </div>
+            <div class="dashboard-card pushes">
+                <div class="dashboard-value" id="dashPushes">0</div>
+                <div class="dashboard-label">Empates 🤝</div>
+            </div>
+        </div>
+        <div class="winrate-text">Tasa de Victoria: <span id="dashWinRate">0%</span></div>
+        <div class="winrate-bar">
+            <div class="winrate-fill" id="winRateFill" style="width: 0%"></div>
+        </div>
+        <h4 style="color: #333; margin-top: 30px;">📜 Historial de Partidas</h4>
+        <div class="history-list" id="historyList">
+            <p style="color: #666;">No hay partidas registradas aún.</p>
+        </div>
+    </div>
+    
     <div class="section hidden" id="startSection">
         <h3>🎯 Iniciar Juego</h3>
         <button onclick="startGame()">Nueva Partida</button>
@@ -105,15 +182,114 @@
             <div class="score">Puntuación: <span id="dealerScore"></span></div>
         </div>
         <div id="resultDisplay"></div>
-        <button onclick="hit()" id="btnHit">🃏 Pedir Carta</button>
-        <button onclick="stand()" id="btnStand">✋ Plantarse</button>
+        <button onclick="window.standFunction()" id="btnStand">✋ Plantarse</button>
+        <button onclick="window.hitFunction()" id="btnHit">🃏 Pedir Carta</button>
         <button onclick="newGame()" id="btnNewGame" class="hidden">🔄 Nueva Partida</button>
-        <button onclick="deleteGame()">🗑️ Eliminar</button>
+        <button onclick="deleteGame()" id="btnDelete">🗑️ Eliminar</button>
     </div>
     <script>
-        console.log("Interfaz Blackjack cargada - " + new Date().toISOString());
+        // Cache-busting version
+        console.log("=== BLACKJACK JS LOADED v2 ===" + new Date().toISOString());
         let currentPlayerId = null;
         let currentGameId = null;
+        
+        // Initialize game state variables
+        window.crupierTurnStarted = false;
+        console.log(">>> Initialized crupierTurnStarted to:", window.crupierTurnStarted);
+        
+        // Global event listeners for buttons (backup to onclick attributes)
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("=== DOM loaded, setting up event listeners ===");
+            
+            const btnStand = document.getElementById('btnStand');
+            if (btnStand) {
+                btnStand.addEventListener('click', function(e) {
+                    console.log("=== Stand button CLICKED via addEventListener ===");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.standFunction();
+                });
+                console.log(">>> Stand button event listener attached");
+            }
+            
+            const btnHit = document.getElementById('btnHit');
+            if (btnHit) {
+                btnHit.addEventListener('click', function(e) {
+                    console.log("=== Hit button CLICKED via addEventListener ===");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.hitFunction();
+                });
+                console.log(">>> Hit button event listener attached");
+            }
+        });
+        
+        // Global functions that buttons call
+        window.standFunction = async function() {
+            console.log(">>> standFunction called, currentGameId:", currentGameId);
+            if (!currentGameId) {
+                alert("No hay una partida activa");
+                return;
+            }
+            
+            try {
+                console.log(">>> Calling /stand endpoint...");
+                const response = await fetch("/games/" + currentGameId + "/stand", { method: "POST" });
+                
+                console.log(">>> Stand response status:", response.status);
+                if (response.ok) {
+                    const game = await response.json();
+                    console.log(">>> Stand successful, gameStatus:", game.status);
+                    updateGameDisplay(game);
+                } else if (response.status === 400) {
+                    const error = await response.json();
+                    console.error(">>> Stand 400 error:", error);
+                    document.getElementById("resultDisplay").innerHTML = "<div class=\"result\" style=\"color: #c62828\">" + (error.message || "No puedes plantarte ahora") + "</div>";
+                } else {
+                    alert("Error al plantarte: " + response.status);
+                }
+            } catch (error) {
+                console.error(">>> Stand exception:", error);
+                alert("Error de conexión al plantarte");
+            }
+        };
+        
+        window.hitFunction = async function() {
+            console.log(">>> hitFunction called, currentGameId:", currentGameId);
+            if (!currentGameId) {
+                alert("No hay una partida activa");
+                return;
+            }
+            
+            // Immediately disable buttons
+            const btnHit = document.getElementById("btnHit");
+            const btnStand = document.getElementById("btnStand");
+            if (btnHit) btnHit.disabled = true;
+            if (btnStand) btnStand.disabled = true;
+            
+            try {
+                console.log(">>> Calling /hit endpoint...");
+                const response = await fetch("/games/" + currentGameId + "/hit", { method: "POST" });
+                
+                console.log(">>> Hit response status:", response.status);
+                if (response.ok) {
+                    const game = await response.json();
+                    console.log(">>> Hit successful, gameStatus:", game.status);
+                    updateGameDisplay(game);
+                    
+                    if (game.result && game.result !== "NO_RESULTS_YET") {
+                        loginOrCreate();
+                    }
+                } else {
+                    if (btnHit) btnHit.disabled = false;
+                    if (btnStand) btnStand.disabled = false;
+                }
+            } catch (error) {
+                console.error(">>> Hit exception:", error);
+                if (btnHit) btnHit.disabled = false;
+                if (btnStand) btnStand.disabled = false;
+            }
+        };
         
         async function loginOrCreate() {
             const name = document.getElementById("playerName").value;
@@ -138,14 +314,112 @@
                 document.getElementById("statLosses").textContent = player.losses;
                 document.getElementById("statPushes").textContent = player.pushes;
                 
+                // Actualizar dashboard
+                updateDashboard(player.wins, player.losses, player.pushes);
+                
                 // Mostrar el div de información del jugador
                 document.getElementById("playerInfo").classList.remove("hidden");
                 document.getElementById("startSection").classList.remove("hidden");
             }
         }
         
+        function toggleDashboard() {
+            const dashboard = document.getElementById("dashboardSection");
+            if (dashboard.classList.contains("hidden")) {
+                dashboard.classList.remove("hidden");
+                document.getElementById("btnDashboard").textContent = "✕ Ocultar";
+                loadPlayerStats();
+            } else {
+                dashboard.classList.add("hidden");
+                document.getElementById("btnDashboard").textContent = "📊 Ver Dashboard";
+            }
+        }
+        
+        async function loadPlayerStats() {
+            if (!currentPlayerId) return;
+            
+            try {
+                const response = await fetch("/players/" + currentPlayerId + "/stats");
+                if (response.ok) {
+                    const stats = await response.json();
+                    updateDashboard(stats.totalGames, stats.wins, stats.losses, stats.pushes);
+                    updateHistoryList(stats.recentGames);
+                } else {
+                    // Si no hay endpoint de stats, usar datos del jugador
+                    console.log("Stats endpoint not available, using basic stats");
+                }
+            } catch (error) {
+                console.log("Could not load stats:", error.message);
+            }
+        }
+        
+        function updateDashboard(total, wins, losses, pushes) {
+            total = total || 0;
+            wins = wins || 0;
+            losses = losses || 0;
+            pushes = pushes || 0;
+            
+            document.getElementById("dashTotalGames").textContent = total;
+            document.getElementById("dashWins").textContent = wins;
+            document.getElementById("dashLosses").textContent = losses;
+            document.getElementById("dashPushes").textContent = pushes;
+            
+            // Calcular porcentaje de victorias
+            const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+            document.getElementById("dashWinRate").textContent = winRate + "%";
+            document.getElementById("winRateFill").style.width = winRate + "%";
+            
+            // Also update the small stats
+            document.getElementById("statWins").textContent = wins;
+            document.getElementById("statLosses").textContent = losses;
+            document.getElementById("statPushes").textContent = pushes;
+        }
+        
+        function updateHistoryList(recentGames) {
+            const historyList = document.getElementById("historyList");
+            
+            if (!recentGames || recentGames.length === 0) {
+                historyList.innerHTML = '<p style="color: #666;">No hay partidas registradas aún.</p>';
+                return;
+            }
+            
+            const historyHtml = recentGames.map(function(game) {
+                let resultClass = "";
+                let resultText = "";
+                
+                if (game.result === "PLAYER_WINS") {
+                    resultClass = "win";
+                    resultText = "Victoria 🏆";
+                } else if (game.result === "CRUPIER_WINS") {
+                    resultClass = "loss";
+                    resultText = "Derrota ❌";
+                } else {
+                    resultClass = "push";
+                    resultText = "Empate 🤝";
+                }
+                
+                const date = new Date(game.playedAt).toLocaleDateString("es-ES", {
+                    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
+                });
+                
+                return '<div class="history-item ' + resultClass + '">' +
+                    '<div>' +
+                    '<span class="history-result ' + resultClass + '">' + resultText + '</span>' +
+                    '<span class="history-scores"> | ' + game.playerScore + '-' + game.dealerScore + '</span>' +
+                    '</div>' +
+                    '<span class="history-date">' + date + '</span>' +
+                    '</div>';
+            }).join("");
+            
+            historyList.innerHTML = historyHtml;
+        }
+        
         async function startGame() {
             if (!currentPlayerId) return alert("Create a player first");
+            
+            // Reset game state variables for new game
+            window.crupierTurnStarted = false;
+            
             const response = await fetch("/games/new", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -160,23 +434,14 @@
             }
         }
         
-        async function hit() {
-            const response = await fetch("/games/" + currentGameId + "/hit", { method: "POST" });
-            if (response.ok) {
-                const game = await response.json();
-                updateGameDisplay(game);
-            }
-        }
-        
-        async function stand() {
-            const response = await fetch("/games/" + currentGameId + "/stand", { method: "POST" });
-            if (response.ok) {
-                const game = await response.json();
-                updateGameDisplay(game);
-            }
-        }
+        // Keep old function names as aliases for backward compatibility
+        async function hit() { return window.hitFunction(); }
+        async function stand() { return window.standFunction(); }
         
         async function newGame() {
+            // Reset game state variables for new game
+            window.crupierTurnStarted = false;
+            
             document.getElementById("btnHit").classList.remove("hidden");
             document.getElementById("btnStand").classList.remove("hidden");
             document.getElementById("btnNewGame").classList.add("hidden");
@@ -185,10 +450,32 @@
         }
         
         async function deleteGame() {
-            if (currentGameId) {
-                await fetch("/games/" + currentGameId + "/delete", { method: "DELETE" });
-                currentGameId = null;
-                document.getElementById("gameSection").classList.add("hidden");
+            if (!currentGameId) {
+                console.log("No game to delete");
+                return;
+            }
+            
+            const btnDelete = document.getElementById("btnDelete");
+            btnDelete.disabled = true;
+            btnDelete.textContent = "Eliminando...";
+            
+            try {
+                const response = await fetch("/games/" + currentGameId + "/delete", { method: "DELETE" });
+                
+                if (response.ok) {
+                    console.log("Game deleted successfully");
+                    currentGameId = null;
+                    document.getElementById("gameSection").classList.add("hidden");
+                } else {
+                    console.error("Failed to delete game, status:", response.status);
+                    alert("Error al eliminar la partida");
+                }
+            } catch (error) {
+                console.error("Error deleting game:", error);
+                alert("Error al eliminar la partida: " + error.message);
+            } finally {
+                btnDelete.disabled = false;
+                btnDelete.textContent = "🗑️ Eliminar";
             }
         }
         
@@ -205,7 +492,14 @@
         }
         
         function updateGameDisplay(game) {
-            console.log("DEBUG updateGameDisplay called, result =", game.result, "playerStatus =", game.player.status);
+            console.log("=== DEBUG updateGameDisplay ===");
+            console.log("gameStatus:", game.status);  // Fixed: was game.gameStatus
+            console.log("result:", game.result);
+            console.log("player.status:", game.player.status);
+            console.log("player.score:", game.player.score);
+            console.log("crupierScore:", game.crupierScore);
+            console.log("crupierHand length:", game.crupierHand ? game.crupierHand.length : 0);
+            console.log("window.crupierTurnStarted:", window.crupierTurnStarted);
             
             // Clear result display first - only show result when game is actually finished
             document.getElementById("resultDisplay").innerHTML = "";
@@ -220,10 +514,13 @@
             document.getElementById("dealerCards").innerHTML = dealerCardsHtml;
             document.getElementById("dealerScore").textContent = game.crupierScore;
 
-            // Detect the dealer turn
-            if (game.gameStatus === "CRUPIER_TURN" && !window.crupierTurnStarted) {
+            // Detect the dealer turn - FIXED: use global crupierPlayStep function
+            if (game.status === "CRUPIER_TURN" && !window.crupierTurnStarted) {
                 window.crupierTurnStarted = true;
+                console.log(">>> Starting dealer turn... gameStatus=" + game.status + ", crupierTurnStarted=" + window.crupierTurnStarted);
                 setTimeout(crupierPlayStep, 1000);
+            } else {
+                console.log(">>> NOT starting dealer turn: gameStatus=" + game.status + ", crupierTurnStarted=" + window.crupierTurnStarted);
             }
 
             // Get button references
@@ -233,9 +530,10 @@
             
             // Show result ONLY for final results, not for NO_RESULTS_YET
             const isFinalResult = game.result && game.result !== "NO_RESULTS_YET";
+            console.log("isFinalResult:", isFinalResult);
             
             if (isFinalResult) {
-                console.log("Game finished with result:", game.result);
+                console.log(">>> GAME FINISHED! Result:", game.result);
                 
                 // Map backend result names to display names
                 const resultMap = {
@@ -251,7 +549,9 @@
                     "EMPATE 🤝": "#f57c00",
                     "¡BLACKJACK! 🏆": "#ffd700"
                 };
-                document.getElementById("resultDisplay").innerHTML = "<div class=\"result\" style=\"color: " + colors[displayResult] + "\">" + displayResult + "</div>";
+                const resultHtml = "<div class=\"result\" style=\"color: " + colors[displayResult] + "\">" + displayResult + "</div>";
+                document.getElementById("resultDisplay").innerHTML = resultHtml;
+                console.log(">>> Result HTML set:", resultHtml);
                 
                 // Hide action buttons, show new game button
                 btnHit.classList.add("hidden");
@@ -261,9 +561,8 @@
                 // Disable buttons
                 btnHit.disabled = true;
                 btnStand.disabled = true;
-                console.log("DEBUG: Final result found, hiding Hit/Stand buttons");
             } else {
-                console.log("DEBUG: Game in progress (no final result), buttons should be visible");
+                console.log(">>> Game continues (status:", game.status, ")");
                 
                 // Disable buttons based on player status
                 const playerStatus = game.player.status;
@@ -279,25 +578,46 @@
                 btnHit.disabled = !canHit;
                 btnStand.disabled = !canStand;
             }
+        }
+        
+        // FIXED: Moved crupierPlayStep to GLOBAL scope so setTimeout can access it
+        async function crupierPlayStep() {
+            console.log(">>> crupierPlayStep called, currentGameId:", currentGameId, ", window.crupierTurnStarted:", window.crupierTurnStarted);
+            if (!currentGameId) {
+                console.log(">>> No game ID, stopping dealer turn");
+                return;
+            }
+            console.log(">>> Dealer hitting... gameId:", currentGameId);
 
-            async function crupierPlayStep() {
-                if (!currentGameId) return;
-
+            try {
                 const response = await fetch("/games/" + currentGameId + "/crupier-hit", {
                     method: "POST"
                 });
 
                 if (response.ok) {
                     const game = await response.json();
+                    console.log(">>> Dealer received response, status:", game.status);
                     updateGameDisplay(game);
 
+                    // If the dealer finished playing, refresh the player stats
+                    if (game.status === "FINISHED" && game.result && game.result !== "NO_RESULTS_YET") {
+                        console.log(">>> Dealer finished, refreshing stats...");
+                        loginOrCreate(); // Refresh player stats
+                    }
+
                     // Si el crupier sigue jugando, continuar después de 1 segundo
-                    if (game.gameStatus === "CRUPIER_TURN") {
+                    if (game.status === "CRUPIER_TURN") {
+                        console.log(">>> Dealer continues, scheduling next hit...");
                         setTimeout(crupierPlayStep, 1000);
                     }
+                } else {
+                    console.error(">>> Dealer hit failed:", response.status);
+                    const errorText = await response.text();
+                    console.error(">>> Error response:", errorText);
                 }
+            } catch (error) {
+                console.error(">>> Dealer hit exception:", error);
             }
-
         }
     </script>
 </body>
