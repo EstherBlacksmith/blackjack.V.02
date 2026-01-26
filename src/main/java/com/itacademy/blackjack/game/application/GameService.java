@@ -13,6 +13,7 @@ import com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository.
 import com.itacademy.blackjack.player.domain.model.Player;
 import com.itacademy.blackjack.player.application.PlayerService;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class GameService {
 
@@ -37,8 +39,11 @@ public class GameService {
         return playerService.findById(playerId)
                 .switchIfEmpty(Mono.error(new ResourceNotFoundException("Player not found: " + playerId)))
                 .flatMap(player -> {
-                    Game game = new Game(scoringService);
-                    game.setPlayer(player);
+                    Game game = Game.builder()
+                            .id(UUID.randomUUID())
+                            .scoringService(scoringService)
+                            .player(player)
+                            .build();
                     game.startGame();
                     return gameRepository.save(game).map(this::mapToResponse);
                 });
@@ -122,7 +127,7 @@ public class GameService {
     }
 
     public Mono<GameResponse> playerHit(UUID gameId) {
-        System.out.println("[DEBUG] GameService.playerHit called for gameId: " + gameId);
+        log.debug("playerHit called for gameId: {}", gameId);
         return gameRepository.findById(gameId)
                 .switchIfEmpty(Mono.error(
                         new ResourceNotFoundException("Game not found with id: " + gameId)))
@@ -130,10 +135,11 @@ public class GameService {
                     game.playerHit();
                     return gameRepository.save(game)
                             .flatMap(savedGame -> {
-                                System.out.println("[DEBUG] After playerHit, gameResult: " + savedGame.getGameResult());
+                                log.debug("After playerHit, gameResult: {}", savedGame.getGameResult());
                                 if (savedGame.getGameResult() != null &&
                                         savedGame.getGameResult() != GameResult.NO_RESULTS_YET) {
-                                    System.out.println("[DEBUG] Player busted or blackjack, updating player stats...");
+                                    log.info("Player busted or blackjack, updating player stats for playerId: {}",
+                                            savedGame.getPlayer().getId());
                                     return playerService.updatePlayerStats(
                                             savedGame.getPlayer().getId(),
                                             savedGame.getGameResult()
@@ -158,7 +164,7 @@ public class GameService {
     }
 
     public Mono<GameResponse> crupierHitOneCard(UUID gameId) {
-        System.out.println("[DEBUG] GameService.crupierHitOneCard called for gameId: " + gameId);
+        log.debug("GameService.crupierHitOneCard called for gameId {}", gameId);
         return gameRepository.findById(gameId)
                 .switchIfEmpty(Mono.error(
                         new ResourceNotFoundException("Game not found with id: " + gameId)))
@@ -167,16 +173,16 @@ public class GameService {
                     return gameRepository.save(game)
                             .flatMap(savedGame -> {
                                 // If the game is finished, update player stats
-                                System.out.println("[DEBUG] Checking if game finished: gameResult=" + savedGame.getGameResult());
+                                log.debug("Checking if game finished: gameResult {}", savedGame.getGameResult());
                                 if (savedGame.getGameResult() != null &&
                                         savedGame.getGameResult() != GameResult.NO_RESULTS_YET) {
-                                    System.out.println("[DEBUG] Game finished, updating player stats...");
+                                    log.info("Game finished, updating player stats...");
                                     return playerService.updatePlayerStats(
                                             savedGame.getPlayer().getId(),
                                             savedGame.getGameResult()
                                     ).thenReturn(savedGame);
                                 }
-                                System.out.println("[DEBUG] Game not finished yet, result: " + savedGame.getGameResult());
+                                log.debug("Game not finished yet, result: {}", savedGame.getGameResult());
                                 return Mono.just(savedGame);
                             });
                 })

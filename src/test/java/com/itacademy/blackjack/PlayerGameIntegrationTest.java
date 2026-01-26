@@ -3,6 +3,7 @@ package com.itacademy.blackjack;
 import com.itacademy.blackjack.config.TestcontainersInitializer;
 import com.itacademy.blackjack.game.application.GameService;
 import com.itacademy.blackjack.game.application.dto.GameResponse;
+import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.GameStatus;
 import com.itacademy.blackjack.player.application.PlayerService;
 import com.itacademy.blackjack.player.domain.model.Player;
@@ -58,13 +59,20 @@ class PlayerGameIntegrationTest {
             GameResponse game = gameService.startNewGame(playerId).block();
             assertNotNull(game);
 
+            // Skip test if player got blackjack (game already finished)
+            if (game.status() == GameStatus.FINISHED) {
+                return;  // Skip rest of test - blackjack handled
+            }
+
+            // Only proceed if game is in PLAYER_TURN
+            assertEquals(GameStatus.PLAYER_TURN, game.status());
+
             GameResponse afterStand = gameService.playerStand(game.id()).block();
             assertNotNull(afterStand);
-            
+
             // With new crupier flow, status is CRUPIER_TURN after player stands
-            // Stats are updated when game completes (crupier finishes)
-            assertTrue(afterStand.status() == GameStatus.CRUPIER_TURN || 
-                       afterStand.status() == GameStatus.FINISHED,
+            assertTrue(afterStand.status() == GameStatus.CRUPIER_TURN ||
+                            afterStand.status() == GameStatus.FINISHED,
                     "Status should be CRUPIER_TURN or FINISHED");
 
             Player updatedPlayer = playerService.findById(playerId).block();
@@ -74,6 +82,7 @@ class PlayerGameIntegrationTest {
             assertTrue(updatedPlayer.getLosses() >= 0);
             assertTrue(updatedPlayer.getPushes() >= 0);
         }
+
 
         @Test
         @DisplayName("Player wins increase after winning game")

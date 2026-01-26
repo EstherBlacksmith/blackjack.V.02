@@ -6,7 +6,6 @@ import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.game.domain.model.exception.NotPlayerTurnException;
 import com.itacademy.blackjack.player.domain.model.Player;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -14,72 +13,118 @@ import java.util.UUID;
 
 @Slf4j
 public class Game {
-    private final ScoringService scoringService;
+
+    // Required fields (final)
     @Getter
-    @Setter
-    private UUID id;
-    @Setter
+    private final UUID id;
+    private final ScoringService scoringService;
+
+    // Optional fields (can be modified)
     @Getter
     private GameStatus gameStatus;
-    @Setter
     @Getter
     private GameResult gameResult;
-    @Setter
     @Getter
     private Deck deck;
     @Getter
-    @Setter
     private Player player;
     @Getter
-    @Setter
     private Crupier crupier;
 
-    public Game(ScoringService scoringService) {
-        this.id = UUID.randomUUID();
-        this.gameStatus = GameStatus.CREATED;
-        this.deck = new Deck();
-        this.player = new Player("Player", scoringService);
-        this.crupier = new Crupier(scoringService);
-        this.gameResult = GameResult.NO_RESULTS_YET;
-        this.scoringService = scoringService;
+    // Private constructor - only Builder can create instances
+    private Game(Builder builder) {
+        this.id = builder.id;
+        this.scoringService = builder.scoringService;
+        this.gameStatus = builder.gameStatus;
+        this.gameResult = builder.gameResult;
+        this.deck = builder.deck;
+        this.player = builder.player;
+        this.crupier = builder.crupier;
     }
 
-    public static Game reconstruct(
-            String id,
-            String playerId,
-            String playerName,
-            List<CardData> playerCards,
-            List<CardData> crupierCards,
-            GameStatus gameStatus,
-            GameResult gameResult
-    ) {
-        Game game = new Game(null);
-        game.setId(UUID.fromString(id));
-        game.setGameStatus(gameStatus);
-        game.setGameResult(gameResult);
-        game.setDeck(new Deck());
+    // ========== CUSTOM BUILDER ==========
+    public static class Builder {
+        private UUID id;
+        private ScoringService scoringService;
+        private GameStatus gameStatus = GameStatus.CREATED;
+        private GameResult gameResult = GameResult.NO_RESULTS_YET;
+        private Deck deck = new Deck();
+        private Player player;
+        private Crupier crupier;
 
-        // Reconstruct player with CardData
-        Player player = Player.reconstruct(
-                UUID.fromString(playerId),
-                playerName,
-                playerCards
-        );
-        game.setPlayer(player);
+        // Required: id
+        public Builder id(UUID id) {
+            this.id = id;
+            return this;
+        }
 
-        // Reconstruct crupier with CardData
-        Crupier crupier = Crupier.reconstruct(crupierCards);
-        game.setCrupier(crupier);
+        // Required: scoringService
+        public Builder scoringService(ScoringService scoringService) {
+            this.scoringService = scoringService;
+            return this;
+        }
 
-        return game;
+        // Optional fields with defaults
+        public Builder gameStatus(GameStatus gameStatus) {
+            this.gameStatus = gameStatus;
+            return this;
+        }
+
+        public Builder gameResult(GameResult gameResult) {
+            this.gameResult = gameResult;
+            return this;
+        }
+
+        public Builder deck(Deck deck) {
+            this.deck = deck;
+            return this;
+        }
+
+        public Builder player(Player player) {
+            this.player = player;
+            return this;
+        }
+
+        public Builder crupier(Crupier crupier) {
+            this.crupier = crupier;
+            return this;
+        }
+
+        // Validation before building
+        public Game build() {
+            // Validate required fields
+            if (id == null) {
+                throw new IllegalStateException("Game ID is required");
+            }
+            if (scoringService == null) {
+                throw new IllegalStateException("ScoringService is required");
+            }
+            if (player == null) {
+                throw new IllegalStateException("Player is required");
+            }
+            if (crupier == null) {
+                crupier = new Crupier(scoringService);
+            }
+            if (deck == null) {
+                deck = new Deck();
+            }
+
+            return new Game(this);
+        }
     }
+
+    // Static factory method to start building
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    // ========== DOMAIN METHODS ==========
 
     public Card drawCardFromDeck() {
         return deck.draw();
     }
 
     public void dealInitialCards() {
-        //2 initial card for each player (player and crupier)
         player.receiveCard(drawCardFromDeck());
         crupier.receiveCard(drawCardFromDeck());
         player.receiveCard(drawCardFromDeck());
@@ -89,7 +134,6 @@ public class Game {
     public void startGame() {
         dealInitialCards();
 
-        // Check for immediate Blackjack
         if (player.getStatus() == PlayerStatus.BLACKJACK) {
             handleBlackjack();
         } else {
@@ -110,7 +154,6 @@ public class Game {
     public void crupierTurn() {
         log.info("Crupier turn starting. Score: {}", crupier.getScore());
 
-        // Dealer must hit on 16 or less, stand on 17 or more
         while (crupier.mustHit()) {
             Card card = drawCardFromDeck();
             crupier.receiveCard(card);
@@ -141,15 +184,6 @@ public class Game {
         int playerScore = player.getScore();
         int crupierScore = crupier.getScore();
 
-
-      /*  Player Blackjack → Player wins 3:2 (unless crupier also has Blackjack = push)
-        Player Busts → Player loses (crupier wins)
-        Crupier Busts → Crupier loses (player wins)
-        Player Score > Crupier Score → Player wins
-        Crupier Score > Player Score → Crupier wins
-        Scores Equal → Push (tie, nobody wins)*/
-
-        // Apply Blackjack rules
         if (player.getStatus() == PlayerStatus.BUSTED) {
             gameResult = GameResult.CRUPIER_WINS;
         } else if (crupier.isBusted()) {
@@ -199,4 +233,35 @@ public class Game {
             determineWinner();
         }
     }
+
+    // ========== RECONSTRUCT METHOD ==========
+
+    public static Game reconstruct(
+            String id,
+            String playerId,
+            String playerName,
+            List<CardData> playerCards,
+            List<CardData> crupierCards,
+            GameStatus gameStatus,
+            GameResult gameResult
+    ) {
+        Player player = Player.reconstruct(
+                UUID.fromString(playerId),
+                playerName,
+                playerCards
+        );
+
+        Crupier crupier = Crupier.reconstruct(crupierCards);
+
+        return Game.builder()
+                .id(UUID.fromString(id))
+                .scoringService(new ScoringService())
+                .gameStatus(gameStatus)
+                .gameResult(gameResult)
+                .deck(new Deck())
+                .player(player)
+                .crupier(crupier)
+                .build();
+    }
+
 }
