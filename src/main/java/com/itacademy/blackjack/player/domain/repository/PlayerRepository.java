@@ -1,6 +1,7 @@
 package com.itacademy.blackjack.player.domain.repository;
 
 import com.itacademy.blackjack.player.domain.model.Player;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import java.util.UUID;
 
@@ -12,4 +13,5 @@ public interface PlayerRepository {
 
     Mono<Player> updateStats(UUID playerId, int wins, int losses, int pushes);
 
+    Flux<Player> findAllByOrderByWinsDesc();
 }

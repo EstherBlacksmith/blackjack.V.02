@@ -2,6 +2,7 @@ package com.itacademy.blackjack.player.application;
 
 import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.game.domain.model.GameResult;
+import com.itacademy.blackjack.player.application.dto.PlayerRankingResponse;
 import com.itacademy.blackjack.player.application.dto.PlayerStatsResponse;
 import com.itacademy.blackjack.player.domain.model.Player;
 import com.itacademy.blackjack.player.domain.repository.PlayerRepository;
@@ -10,7 +11,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import com.itacademy.blackjack.game.application.dto.GameHistoryResponse;
-import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository.GameRepository;
 
 import java.time.Instant;
@@ -116,4 +116,22 @@ public class PlayerService {
     public Mono<Void> updateStatsOnly(UUID playerId, int wins, int losses, int pushes) {
         return playerRepository.updateStats(playerId, wins, losses, pushes).then();
     }
+
+    public Flux<PlayerRankingResponse> getPlayerRanking() {
+        return playerRepository.findAllByOrderByWinsDesc()
+                .index() // Returns Tuple2<Long, Player> where T1 is index
+                .map(tuple -> {
+                    long rank = tuple.getT1() + 1; // Convert 0-based index to 1-based rank
+                    Player player = tuple.getT2();
+                    return new PlayerRankingResponse(
+                            (int) rank,
+                            player.getId().toString(),
+                            player.getName(),
+                            player.getWins(),
+                            player.getLosses(),
+                            player.getPushes()
+                    );
+                });
+    }
+
 }

@@ -89,6 +89,13 @@ public class PlayerRepositoryImpl implements PlayerRepository {
                 .thenReturn(Player.fromDatabase(playerId, null, wins, losses, pushes));
     }
 
+    @Override
+    public Flux<Player> findAllByOrderByWinsDesc() {
+        return client.sql("SELECT * FROM players ORDER BY wins DESC")
+                .map(this::mapRowToPlayer)
+                .all();
+    }
+
 
 }
 
