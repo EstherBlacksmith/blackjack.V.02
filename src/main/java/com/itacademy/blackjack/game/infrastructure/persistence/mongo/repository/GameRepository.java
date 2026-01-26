@@ -1,6 +1,7 @@
 package com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository;
 
 import com.itacademy.blackjack.game.domain.model.Game;
+import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -14,5 +15,8 @@ public interface GameRepository {
     Mono<Void> deleteById(UUID id);
 
     Flux<Game> findByPlayerId(UUID playerId);
+
+    // New method to get documents with timestamps
+    Flux<GameDocument> findDocumentsByPlayerId(UUID playerId);
 
 }

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Repository
@@ -20,6 +21,11 @@ public class GameRepositoryImpl implements GameRepository {
     @Override
     public Mono<Game> save(Game game) {
         GameDocument document = mapper.toDocument(game);
+        // Add timestamp if not already set
+        if (document.getCreatedAt() == null) {
+            document.setCreatedAt(Instant.now());
+        }
+        document.setFinishedAt(Instant.now());
         return mongoRepository.save(document)
                 .map(mapper::toDomain);
     }
@@ -39,6 +45,11 @@ public class GameRepositoryImpl implements GameRepository {
     public Flux<Game> findByPlayerId(UUID playerId) {
         return mongoRepository.findByPlayerId(playerId.toString())
                 .map(mapper::toDomain);
+    }
+
+    @Override
+    public Flux<GameDocument> findDocumentsByPlayerId(UUID playerId) {
+        return mongoRepository.findByPlayerId(playerId.toString());
     }
 
 
