@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+*.iml
+.vscode
+
+# Build artifacts
+target/
+!target/*.jar
+
+# Maven (keep mvnw for wrapper)
+# .mvn/ is intentionally NOT excluded to support mvnw
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Documentation
+README.md
+ARCHITECTURE_*.md
+CODE_REVIEW.md
