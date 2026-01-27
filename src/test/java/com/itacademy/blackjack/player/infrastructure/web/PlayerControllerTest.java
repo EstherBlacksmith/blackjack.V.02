@@ -1,7 +1,6 @@
 package com.itacademy.blackjack.player.infrastructure.web;
 
 import com.itacademy.blackjack.config.TestcontainersInitializer;
-import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.game.application.GameService;
 import com.itacademy.blackjack.game.application.dto.GameResponse;
 import com.itacademy.blackjack.game.domain.model.GameStatus;
@@ -39,9 +38,6 @@ class PlayerControllerTest {
 
     @MockBean
     private PlayerService playerService;
-
-    @MockBean
-    private ScoringService scoringService;
 
     private UUID testPlayerId;
     private Player testPlayer;

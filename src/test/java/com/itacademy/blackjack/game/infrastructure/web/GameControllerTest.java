@@ -1,6 +1,5 @@
 package com.itacademy.blackjack.game.infrastructure.web;
 
-import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.game.application.GameService;
 import com.itacademy.blackjack.game.application.dto.CardResponse;
 import com.itacademy.blackjack.game.application.dto.GameResponse;
@@ -36,9 +35,6 @@ class GameControllerTest {
 
     @MockBean
     private GameService gameService;
-
-    @MockBean
-    private ScoringService scoringService;
 
     @MockBean
     private GameRepository gameRepository;

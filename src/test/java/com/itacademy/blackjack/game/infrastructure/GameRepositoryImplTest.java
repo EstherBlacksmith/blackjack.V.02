@@ -1,6 +1,5 @@
 package com.itacademy.blackjack.game.infrastructure;
 
-import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.game.domain.model.Game;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.document.GameDocument;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.mapper.GameMapper;
@@ -45,11 +44,9 @@ class GameRepositoryImplTest {
         UUID gameId = UUID.randomUUID();
         UUID playerId = UUID.randomUUID();
         Player player = Player.fromDatabase(playerId, "TestPlayer", 0, 0, 0);
-        ScoringService scoringService = new ScoringService();
 
         Game game = Game.builder()
                 .id(gameId)
-                .scoringService(scoringService)
                 .player(player)
                 .build();
 
@@ -79,7 +76,6 @@ class GameRepositoryImplTest {
 
         Game expectedGame = Game.builder()
                 .id(gameId)
-                .scoringService(new ScoringService())
                 .player(Player.fromDatabase(playerId, "TestPlayer", 0, 0, 0))
                 .build();
 
@@ -129,7 +125,6 @@ class GameRepositoryImplTest {
 
         Game game = Game.builder()
                 .id(gameId)
-                .scoringService(new ScoringService())
                 .player(Player.fromDatabase(playerId, "TestPlayer", 0, 0, 0))
                 .build();
 

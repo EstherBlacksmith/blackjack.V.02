@@ -1,6 +1,6 @@
 package com.itacademy.blackjack.player.domain.model;
 
-import com.itacademy.blackjack.deck.model.ScoringService;
+
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,12 +12,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class PlayerTest {
 
     private Player player;
-    private ScoringService scoringService;
 
     @BeforeEach
     void setUp() {
-        scoringService = new ScoringService();
-        player = Player.createNew("TestPlayer", scoringService);
+        player = Player.createNew("TestPlayer");
     }
 
     @Nested
@@ -121,7 +119,7 @@ class PlayerTest {
         @DisplayName("Statistics should be independent for different players")
         void differentPlayers_haveIndependentStatistics() {
             // Given
-            Player player2 = Player.createNew("Player2", scoringService);
+            Player player2 = Player.createNew("Player2");
 
             // When
             player.applyGameResult(GameResult.PLAYER_WINS);
@@ -251,8 +249,8 @@ class PlayerTest {
         @DisplayName("Player name should not affect statistics")
         void statistics_independentOfPlayerName() {
             // Given - Two players with different names
-            Player player1 = Player.createNew("ShortName", scoringService);
-            Player player2 = Player.createNew("VeryLongPlayerNameForTesting", scoringService);
+            Player player1 = Player.createNew("ShortName");
+            Player player2 = Player.createNew("VeryLongPlayerNameForTesting");
 
             // When - Apply same results
             for (int i = 0; i < 5; i++) {

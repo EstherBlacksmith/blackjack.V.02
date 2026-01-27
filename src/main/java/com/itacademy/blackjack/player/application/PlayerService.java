@@ -1,6 +1,5 @@
 package com.itacademy.blackjack.player.application;
 
-import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.player.application.dto.PlayerRankingResponse;
 import com.itacademy.blackjack.player.application.dto.PlayerStatsResponse;
@@ -26,15 +25,11 @@ public class PlayerService {
 
     private final PlayerRepository playerRepository;
     private final PlayerMapper playerMapper;
-    private final ScoringService scoringService;
     private final GameRepository gameRepository;
 
-    public PlayerService(PlayerRepository playerRepository,
-                         PlayerMapper playerMapper,
-                         ScoringService scoringService, GameRepository gameRepository) {
+    public PlayerService(PlayerRepository playerRepository, PlayerMapper playerMapper, GameRepository gameRepository) {
         this.playerRepository = playerRepository;
         this.playerMapper = playerMapper;
-        this.scoringService = scoringService;
         this.gameRepository = gameRepository;
     }
 
@@ -49,7 +44,7 @@ public class PlayerService {
 
     public Mono<Player> createPlayer(String name) {
         log.info("Creating new player with name: {}", name);
-        Player player = Player.createNew(name, scoringService);
+        Player player = Player.createNew(name);
         return playerRepository.save(player);
     }
 

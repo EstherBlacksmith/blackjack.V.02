@@ -1,6 +1,5 @@
 package com.itacademy.blackjack.player.application;
 
-import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.game.application.dto.GameHistoryResponse;
 import com.itacademy.blackjack.game.infrastructure.persistence.mongo.repository.GameRepository;
 import com.itacademy.blackjack.player.application.dto.PlayerStatsResponse;
@@ -36,9 +35,6 @@ class PlayerServiceTest {
 
     @MockBean
     private PlayerMapper playerMapper;
-
-    @MockBean
-    private ScoringService scoringService;
 
     @MockBean
     private GameRepository gameRepository;

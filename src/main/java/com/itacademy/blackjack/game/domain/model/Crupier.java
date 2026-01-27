@@ -2,9 +2,6 @@ package com.itacademy.blackjack.game.domain.model;
 
 import com.itacademy.blackjack.deck.infrastructure.CardMapper;
 import com.itacademy.blackjack.deck.model.Card;
-import com.itacademy.blackjack.deck.model.CardRank;
-import com.itacademy.blackjack.deck.model.ScoringService;
-import com.itacademy.blackjack.deck.model.Suit;
 
 import java.util.List;
 
@@ -14,12 +11,12 @@ import java.util.List;
 public class Crupier {
     private final Hand hand;
 
-    public Crupier(ScoringService scoringService) {
-        this.hand = new Hand(scoringService);
+    public Crupier() {
+        this.hand = new Hand();
     }
 
     public static Crupier reconstruct(List<CardData> cards) {
-        Crupier crupier = new Crupier(new ScoringService());
+        Crupier crupier = new Crupier();
         for (CardData cardDoc : cards) {
             Card card = CardMapper.toCard(cardDoc);
             crupier.receiveCard(card);

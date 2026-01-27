@@ -1,6 +1,5 @@
 package com.itacademy.blackjack.player.application.dto;
 
-import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.player.application.PlayerService;
 import com.itacademy.blackjack.player.domain.model.Player;
@@ -26,26 +25,22 @@ public class PlayerRankingTest {
     PlayerMapper playerMapper;
 
     @Mock
-    ScoringService scoringService;
-
-    @Mock
     GameRepository gameRepository;
 
     @Test
     void shouldReturnPlayersOrderedByWinsDesc() {
         // Given - Create real players
-        Player player1 = Player.createNew("Alice", scoringService);
+        Player player1 = Player.createNew("Alice");
         player1.applyGameResult(GameResult.PLAYER_WINS);
         player1.applyGameResult(GameResult.PLAYER_WINS);
 
-        Player player2 = Player.createNew("Bob", scoringService);
+        Player player2 = Player.createNew("Bob");
         player2.applyGameResult(GameResult.PLAYER_WINS);
 
         // Create the real service with mocked dependencies
         PlayerService playerService = new PlayerService(
                 playerRepository,
                 playerMapper,
-                scoringService,
                 gameRepository
         );
 

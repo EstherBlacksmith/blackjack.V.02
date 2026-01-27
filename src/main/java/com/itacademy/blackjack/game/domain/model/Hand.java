@@ -1,6 +1,7 @@
 package com.itacademy.blackjack.game.domain.model;
 
 import com.itacademy.blackjack.deck.model.Card;
+
 import com.itacademy.blackjack.deck.model.ScoringService;
 
 import java.util.ArrayList;
@@ -8,16 +9,13 @@ import java.util.List;
 
 public final class Hand {
     private final List<Card> cards;
-    private final ScoringService scoringService;
 
-    public Hand(ScoringService scoringService) {
+    public Hand() {
         this.cards = new ArrayList<>();
-        this.scoringService = scoringService;
     }
 
-    public Hand(List<Card> cards, ScoringService scoringService) {
+    public Hand(List<Card> cards) {
         this.cards = new ArrayList<>(cards); // Defensive copy
-        this.scoringService = scoringService;
     }
 
     // Immutable access
@@ -30,7 +28,7 @@ public final class Hand {
     }
 
     public int getScore() {
-        return scoringService.calculateHandScore(cards);
+        return ScoringService.calculateHandScore(cards);  // Static call
     }
 
     public int getCardCount() {
@@ -42,11 +40,11 @@ public final class Hand {
     }
 
     public boolean isBlackjack() {
-        return getScore() == 21 && cards.size() == 2;
+        return getScore() == 21 && cards.size() == 2;  // ✓ No changes needed
     }
 
     public boolean isBusted() {
-        return getScore() > 21;
+        return getScore() > 21;  // ✓ No changes needed
     }
 
     @Override

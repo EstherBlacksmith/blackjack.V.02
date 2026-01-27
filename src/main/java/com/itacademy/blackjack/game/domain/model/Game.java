@@ -17,8 +17,6 @@ public class Game {
     // Required fields (final)
     @Getter
     private final UUID id;
-    private final ScoringService scoringService;
-
     // Optional fields (can be modified)
     @Getter
     private GameStatus gameStatus;
@@ -34,7 +32,6 @@ public class Game {
     // Private constructor - only Builder can create instances
     private Game(Builder builder) {
         this.id = builder.id;
-        this.scoringService = builder.scoringService;
         this.gameStatus = builder.gameStatus;
         this.gameResult = builder.gameResult;
         this.deck = builder.deck;
@@ -42,10 +39,13 @@ public class Game {
         this.crupier = builder.crupier;
     }
 
+    public int getPlayerScore() {
+        return ScoringService.calculateHandScore(player.getHand().getCards());
+    }
+
     // ========== CUSTOM BUILDER ==========
     public static class Builder {
         private UUID id;
-        private ScoringService scoringService;
         private GameStatus gameStatus = GameStatus.CREATED;
         private GameResult gameResult = GameResult.NO_RESULTS_YET;
         private Deck deck = new Deck();
@@ -55,12 +55,6 @@ public class Game {
         // Required: id
         public Builder id(UUID id) {
             this.id = id;
-            return this;
-        }
-
-        // Required: scoringService
-        public Builder scoringService(ScoringService scoringService) {
-            this.scoringService = scoringService;
             return this;
         }
 
@@ -96,14 +90,12 @@ public class Game {
             if (id == null) {
                 throw new IllegalStateException("Game ID is required");
             }
-            if (scoringService == null) {
-                throw new IllegalStateException("ScoringService is required");
-            }
+
             if (player == null) {
                 throw new IllegalStateException("Player is required");
             }
             if (crupier == null) {
-                crupier = new Crupier(scoringService);
+                crupier = new Crupier();
             }
             if (deck == null) {
                 deck = new Deck();
@@ -255,7 +247,6 @@ public class Game {
 
         return Game.builder()
                 .id(UUID.fromString(id))
-                .scoringService(new ScoringService())
                 .gameStatus(gameStatus)
                 .gameResult(gameResult)
                 .deck(new Deck())

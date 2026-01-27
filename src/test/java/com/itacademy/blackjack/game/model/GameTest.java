@@ -18,41 +18,32 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class GameTest {
 
-    ScoringService scoringService;
-
-    @BeforeEach
-    public void setUp() {
-        scoringService = new ScoringService();
-    }
-
-    private Game createTestGame(ScoringService scoringService) {
+    private Game createTestGame() {
         return Game.builder()
                 .id(UUID.randomUUID())
-                .scoringService(scoringService)
                 .gameStatus(GameStatus.CREATED)
                 .gameResult(GameResult.NO_RESULTS_YET)
                 .deck(new Deck())
-                .player(Player.createNew("Test Player", scoringService))  // Use factory method!
-                .crupier(new Crupier(scoringService))
+                .player(Player.createNew("Test Player"))  // Use factory method!
+                .crupier(new Crupier())
                 .build();
     }
 
-    private Game createGameWithCrupierTurn(ScoringService scoringService) {
+    private Game createGameWithCrupierTurn() {
         return Game.builder()
                 .id(UUID.randomUUID())
-                .scoringService(scoringService)
                 .gameStatus(GameStatus.CRUPIER_TURN)
                 .gameResult(GameResult.NO_RESULTS_YET)
                 .deck(new Deck())
-                .player(Player.createNew("Test Player", scoringService))  // Use factory method!
-                .crupier(new Crupier(scoringService))
+                .player(Player.createNew("Test Player"))  // Use factory method!
+                .crupier(new Crupier())
                 .build();
     }
 
     @Test
     void testGameInitialization() {
         // Given: A new Game instance
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
         // Then: Verify all initial conditions
         assertNotNull(game.getId(), "Game ID should not be null");
@@ -66,7 +57,7 @@ class GameTest {
     @Test
     void testDeckIsShuffledOnInitialization() {
         // Given: A new Game instance
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
 
         // Then: Verify deck has 52 cards
@@ -77,7 +68,7 @@ class GameTest {
     @Test
     void testPlayerScoreInitiallyZero() {
         // Given: A new Game instance
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
 
         // Then: Player score should be 0 (no cards)
@@ -87,7 +78,7 @@ class GameTest {
     @Test
     void testDrawCardFromEmptyDeckThrowsException() {
         // Given: A game with all cards drawn
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
         for (int i = 0; i < 52; i++) {
             game.drawCardFromDeck();
@@ -100,7 +91,7 @@ class GameTest {
     @Test
     void testCrupierWinsWhenPlayerBusts() {
         // Given: A game where we manually set up a bust scenario
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
         game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
         game.getPlayer().receiveCard(new Card(CardRank.KING, Suit.SPADES));
         game.getPlayer().receiveCard(new Card(CardRank.TWO, Suit.CLUBS)); // Bust!
@@ -119,7 +110,7 @@ class GameTest {
     @Test
     void testPlayerWinsWhenCrupierBusts() {
         // Given: A game where crupier busts
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
         game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
         game.getPlayer().receiveCard(new Card(CardRank.SIX, Suit.SPADES)); // 16
 
@@ -137,7 +128,7 @@ class GameTest {
     @Test
     void testPushWhenScoresAreEqual() {
         // Given: A tie game
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
         game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
         game.getPlayer().receiveCard(new Card(CardRank.SIX, Suit.SPADES)); // 16
@@ -155,7 +146,7 @@ class GameTest {
     @Test
     void testGameStatusTransitions() {
         // Given: A new game
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
         assertEquals(GameStatus.CREATED, game.getGameStatus());
 
@@ -168,7 +159,7 @@ class GameTest {
 
     @Test
     void testPlayerHitThrowsExceptionWhenNotPlayerTurn() {
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
         game.startGame();
 
         // If player doesn't have blackjack, game status is PLAYER_TURN
@@ -184,7 +175,7 @@ class GameTest {
 
     @Test
     void testPlayerWinsWithHigherScore() {
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
         game.getCrupier().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
         game.getCrupier().receiveCard(new Card(CardRank.SIX, Suit.DIAMONDS)); // 16
@@ -198,7 +189,7 @@ class GameTest {
 
     @Test
     void testCrupierWinsWithHigherScore() {
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
         game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
         game.getPlayer().receiveCard(new Card(CardRank.FIVE, Suit.SPADES)); // 15
@@ -214,7 +205,7 @@ class GameTest {
     @Test
     void testPlayerHitThrowsExceptionWhenGameNotStarted() {
         // Given: A new game that hasn't started
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
         // When/Then: Hit before game starts should throw
         assertThrows(NotPlayerTurnException.class, game::playerHit, "Hit should throw when game hasn't started");
@@ -223,7 +214,7 @@ class GameTest {
     @Test
     void testPlayerHitThrowsExceptionAfterPlayerStood() {
         // Given: A game where player has stood
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
         game.startGame();
 
         // Player stands (only if it's their turn)
@@ -238,7 +229,7 @@ class GameTest {
     @Test
     void testPlayerHitThrowsExceptionWhenGameFinished() {
         // Given: A finished game
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
         // Force a finished state - player busts
         game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
@@ -253,7 +244,7 @@ class GameTest {
     @Test
     void testPlayerStandThrowsExceptionWhenGameNotStarted() {
         // Given: A new game that hasn't started
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
         // When/Then: Stand before game starts should throw
         assertThrows(NotPlayerTurnException.class, game::playerStand, "Stand should throw when game hasn't started");
@@ -262,7 +253,7 @@ class GameTest {
     @Test
     void testPlayerStandThrowsExceptionWhenAlreadyFinished() {
         // Given: A finished game
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
 
         // Force finish - player busts
         game.getPlayer().receiveCard(new Card(CardRank.TEN, Suit.HEARTS));
@@ -277,7 +268,7 @@ class GameTest {
     @Test
     void testCrupierTurnStatusExists() {
         // Given: A game after player stands
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
         game.startGame();
 
         // Skip if player got blackjack (game ends immediately)
@@ -296,7 +287,7 @@ class GameTest {
     @Test
     void testCrupierHitOneCard_ThrowsException_WhenNotCrupierTurn() {
         // Given: A game in PLAYER_TURN status
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
         game.startGame();
 
         // When/Then: Calling crupierHitOneCard should throw
@@ -307,7 +298,7 @@ class GameTest {
     @Test
     void testCrupierHitOneCard_AddsCard_WhenCrupierMustHit() {
         // Given: A game with crupier turn status
-        Game game = createGameWithCrupierTurn(scoringService);  // Changed!
+        Game game = createGameWithCrupierTurn();
         game.getCrupier().receiveCard(new Card(CardRank.TEN, Suit.HEARTS)); // 10
         game.getCrupier().receiveCard(new Card(CardRank.FIVE, Suit.SPADES)); // 15
 
@@ -322,7 +313,7 @@ class GameTest {
 
     @Test
     void testCrupierHitOneCard_DoesNotAddCard_WhenCrupierShouldStand() {
-        Game game = createGameWithCrupierTurn(scoringService);  // Changed!
+        Game game = createGameWithCrupierTurn();
         game.getCrupier().receiveCard(new Card(CardRank.KING, Suit.HEARTS)); // 10
         game.getCrupier().receiveCard(new Card(CardRank.SEVEN, Suit.SPADES)); // 17
 
@@ -337,7 +328,7 @@ class GameTest {
     @Test
     void testPlayerStand_SetsCrupierTurnStatus() {
         // Given: A game in PLAYER_TURN
-        Game game = createTestGame(scoringService);
+        Game game = createTestGame();
         game.startGame();
 
         // When: Player stands

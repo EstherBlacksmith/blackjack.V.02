@@ -43,7 +43,7 @@ public class Player {
         this.wins = builder.wins;
         this.losses = builder.losses;
         this.pushes = builder.pushes;
-        this.hand = builder.hand != null ? builder.hand : new Hand(new ScoringService());
+        this.hand = builder.hand != null ? builder.hand : new Hand();
         this.status = builder.status != null ? builder.status : PlayerStatus.ACTIVE;
     }
 
@@ -114,7 +114,7 @@ public class Player {
 
     // FACTORY METHODS
 
-    public static Player createNew(String name, ScoringService scoringService) {
+    public static Player createNew(String name) {
         // Trust the name is already validated by the DTO
 
         return Player.builder()
@@ -123,7 +123,7 @@ public class Player {
                 .wins(0)
                 .losses(0)
                 .pushes(0)
-                .hand(new Hand(scoringService))
+                .hand(new Hand())
                 .status(PlayerStatus.ACTIVE)
                 .build();
     }
@@ -146,7 +146,7 @@ public class Player {
                 .status(PlayerStatus.ACTIVE);
 
         if (cards != null && !cards.isEmpty()) {
-            Hand hand = new Hand(new ScoringService());
+            Hand hand = new Hand();
             for (CardData cardDoc : cards) {
                 Card card = CardMapper.toCard(cardDoc);
                 hand.addCard(card);

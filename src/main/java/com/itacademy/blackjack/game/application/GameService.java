@@ -1,7 +1,6 @@
 package com.itacademy.blackjack.game.application;
 
 import com.itacademy.blackjack.deck.model.Card;
-import com.itacademy.blackjack.deck.model.ScoringService;
 import com.itacademy.blackjack.game.application.dto.CardResponse;
 import com.itacademy.blackjack.game.application.dto.GameResponse;
 import com.itacademy.blackjack.game.application.dto.PlayerResponse;
@@ -26,12 +25,10 @@ import java.util.stream.Collectors;
 public class GameService {
 
     private final PlayerService playerService;
-    private final ScoringService scoringService;
     private final GameRepository gameRepository;
 
-    public GameService(PlayerService playerService, ScoringService scoringService, GameRepository gameRepository) {
+    public GameService(PlayerService playerService, GameRepository gameRepository) {
         this.playerService = playerService;
-        this.scoringService = scoringService;
         this.gameRepository = gameRepository;
     }
 
@@ -41,7 +38,6 @@ public class GameService {
                 .flatMap(player -> {
                     Game game = Game.builder()
                             .id(UUID.randomUUID())
-                            .scoringService(scoringService)
                             .player(player)
                             .build();
                     game.startGame();
