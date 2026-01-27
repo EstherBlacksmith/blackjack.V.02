@@ -1,6 +1,5 @@
 package com.itacademy.blackjack.game.domain.model;
 
-import com.itacademy.blackjack.deck.infrastructure.CardMapper;
 import com.itacademy.blackjack.deck.model.Card;
 
 import java.util.List;
@@ -18,7 +17,7 @@ public class Crupier {
     public static Crupier reconstruct(List<CardData> cards) {
         Crupier crupier = new Crupier();
         for (CardData cardDoc : cards) {
-            Card card = CardMapper.toCard(cardDoc);
+            Card card = Card.fromData(cardDoc);
             crupier.receiveCard(card);
         }
 

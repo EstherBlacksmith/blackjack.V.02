@@ -1,17 +1,11 @@
 package com.itacademy.blackjack.player.domain.model;
 
-import com.itacademy.blackjack.deck.infrastructure.CardMapper;
 import com.itacademy.blackjack.deck.model.Card;
-import com.itacademy.blackjack.deck.model.CardRank;
-import com.itacademy.blackjack.deck.model.ScoringService;
-import com.itacademy.blackjack.deck.model.Suit;
 import com.itacademy.blackjack.game.domain.model.CardData;
 import com.itacademy.blackjack.game.domain.model.GameResult;
 import com.itacademy.blackjack.game.domain.model.Hand;
 import com.itacademy.blackjack.game.domain.model.PlayerStatus;
-import lombok.Builder;
 import lombok.Getter;
-import org.springframework.data.annotation.Id;
 
 import java.util.List;
 import java.util.UUID;
@@ -140,6 +134,7 @@ public class Player {
     }
 
     public static Player reconstruct(UUID id, String name, List<CardData> cards) {
+
         Builder builder = Player.builder()
                 .id(id)
                 .name(name)
@@ -148,7 +143,7 @@ public class Player {
         if (cards != null && !cards.isEmpty()) {
             Hand hand = new Hand();
             for (CardData cardDoc : cards) {
-                Card card = CardMapper.toCard(cardDoc);
+                Card card = Card.fromData(cardDoc);
                 hand.addCard(card);
             }
             builder.hand(hand);
