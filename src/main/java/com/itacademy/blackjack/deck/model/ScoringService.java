@@ -1,9 +1,14 @@
 package com.itacademy.blackjack.deck.model;
 
+import org.springframework.stereotype.Service;
+
 import java.util.List;
 
-public class ScoringService {
-    public int calculateHandScore(List<Card> hand) {
+@Service
+public final class ScoringService {
+    private ScoringService() {}
+
+    public static int calculateHandScore(List<Card> hand) {
         int score = hand.stream().mapToInt(Card::getNumericValue).sum();
         // Ace logic: if score <= 11, count Ace as 11
         boolean hasAce = hand.stream().anyMatch(c -> c.getRank() == CardRank.ACE);

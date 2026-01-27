@@ -1,5 +1,0 @@
-package com.itacademy.blackjack.game.model;
-
-public enum GameResult {
-    PLAYER_WINS, PUSH, CRUPIER_WINS, BLACKJACK
-}

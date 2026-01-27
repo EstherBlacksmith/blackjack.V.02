@@ -1,6 +1,9 @@
 package com.itacademy.blackjack.exception;
 
-import com.itacademy.blackjack.game.model.exception.NotPlayerTurnException;
+
+import com.itacademy.blackjack.game.domain.model.exception.MissingIdentifierException;
+import com.itacademy.blackjack.game.domain.model.exception.NotPlayerTurnException;
+import com.itacademy.blackjack.game.domain.model.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -20,6 +23,22 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()),
                 HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(MissingIdentifierException.class)
+    public ResponseEntity<ErrorResponse> handleMissingIdentifierException(MissingIdentifierException ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND.value()),
+                HttpStatus.NOT_FOUND
         );
     }
 

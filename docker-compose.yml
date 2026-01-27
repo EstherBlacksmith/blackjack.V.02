@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Spring Boot Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blackjack-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_R2DBC_URL: r2dbc:mysql://mysql:3306/blackjack
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/blackjack
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    networks:
+      - blackjack-network
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: blackjack-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: blackjack
+      MYSQL_USER: blackjack
+      MYSQL_PASSWORD: blackjack123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - blackjack-network
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: blackjack-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: blackjack
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - blackjack-network
+
+networks:
+  blackjack-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  mongodb_data:

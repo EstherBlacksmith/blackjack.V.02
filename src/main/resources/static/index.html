@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐱 Kawaii Blackjack ✨</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <h1>🐱 Kawaii Blackjack ✨</h1>
+    <div style="font-size: 20px; margin-bottom: 15px;">Good Luck, Kitty! 🍀</div>
+    
+    <div class="section">
+        <h3>🌸 Login / Register 🌸</h3>
+        <input type="text" id="playerName" placeholder="Enter your name">
+        <button onclick="loginOrCreate()">🐱 Enter</button>
+        <div id="playerInfo" class="hidden">
+            <p id="playerIdDisplay"></p>
+            
+            <!-- Stats table -->
+            <table class="stats-table">
+                <tr>
+                    <th>🏆 Wins</th>
+                    <td id="statWins">0</td>
+                </tr>
+                <tr>
+                    <th>💔 Losses</th>
+                    <td id="statLosses">0</td>
+                </tr>
+                <tr>
+                    <th>🤝 Pushes</th>
+                    <td id="statPushes">0</td>
+                </tr>
+            </table>
+            
+            <!-- Win rate -->
+            <div class="winrate-container">
+                <div class="winrate-text">Win Rate: <span id="winRateDisplay">0%</span> ✨</div>
+                <div class="winrate-bar">
+                    <div class="winrate-fill" id="winRateFill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <!-- Game History -->
+            <h4 class="history-title">📜 Game History</h4>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Result</th>
+                        <th>Your Score</th>
+                        <th>Dealer Score</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="historyList">
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #999;">No games yet 🐱</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="section hidden" id="startSection">
+        <h3>🎯 Start Game</h3>
+        <button onclick="startGame()">🃏 New Game</button>
+    </div>
+    
+    <div class="section hidden" id="gameSection">
+        <h3>🎰 Game in Progress</h3>
+        <p>Game ID: <span id="gameIdDisplay"></span></p>
+        <div class="section">
+            <h4>🃏 Your Hand</h4>
+            <div class="cards-container" id="playerCards"></div>
+            <div class="score">Score: <span id="playerScore"></span></div>
+        </div>
+        <div class="section">
+            <h4>🎰 Dealer's Hand <span id="dealerIndicator" class="dealer-thinking hidden">🎲 Dealer playing...</span></h4>
+            <div class="cards-container" id="dealerCards"></div>
+            <div class="score">Score: <span id="dealerScore"></span></div>
+        </div>
+        <div id="resultDisplay"></div>
+        <button onclick="window.standFunction()" id="btnStand">✋ Stand</button>
+        <button onclick="window.hitFunction()" id="btnHit">🃏 Hit</button>
+        <button onclick="newGame()" id="btnNewGame" class="hidden">🔄 New Game</button>
+        <button onclick="deleteGame()" id="btnDelete">🗑️ Delete</button>
+    </div>
+    
+    <!-- Ranking Section -->
+    <div class="section">
+        <h3>🏆 Player Rankings 🏆</h3>
+        <p>See who's winning the most games!</p>
+        <button onclick="showRanking()">📊 View Rankings</button>
+    </div>
+    
+    <!-- Ranking Modal -->
+    <div id="rankingModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeRanking()">&times;</span>
+            <h3 style="color: #ff85a2;">🏆 Player Rankings 🏆</h3>
+            <table class="ranking-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                    </tr>
+                </thead>
+                <tbody id="rankingList">
+                    <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Game Details Modal -->
+    <div id="gameDetailsModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeGameDetails()">&times;</span>
+            <h3 style="color: #a18cd1;">🎰 Game Details 🎰</h3>
+            <div id="gameDetailsContent">
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
